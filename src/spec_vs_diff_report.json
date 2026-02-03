@@ -1,0 +1,97 @@
+{
+  "kind": "spec_vs_diff_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-03T18:41:50.079Z",
+  "summary": "Diff adds a kid-mode frontend flow (selector + distinct layout + assigned programs/materials pages) and introduces KidProfile types/maps in the backend, but backend persistence/authorization boundaries and attachment download support are not clearly implemented from the provided diff summary. Diff also contains substantial unrelated UI/feature changes (Sprint Board, admin user management scaffolding, sample-data filtering adjustments).",
+  "missing_requirements": [
+    {
+      "id": "REQ-26",
+      "requirement": "Backend persists Kid Profiles in stable storage and associates them to an Internet Identity principal; supports multiple kid profiles per principal; stores kid data separately from staff user profile data.",
+      "reason": "The diff shows an in-memory KidProfile type and maps, but the provided backend snippet does not show any stable storage declarations or upgrade hooks that persist kidProfiles/kidProfilesByCaretaker/activeKidContext across upgrades. Persistence in stable storage is an explicit acceptance criterion.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    },
+    {
+      "id": "REQ-28",
+      "requirement": "Kid context can only list/download Program attachments for assigned Programs.",
+      "reason": "Frontend attachment download is explicitly not implemented: the hook throws an error stating backend download functionality is not yet implemented, so kid-mode cannot download attachments as required.",
+      "evidence": [
+        "frontend/src/hooks/data/useProgramAttachments.ts",
+        "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx"
+      ]
+    },
+    {
+      "id": "REQ-28",
+      "requirement": "When operating as a kid (active Kid Profile selected), restrict access to kid-allowed resources only and deny internal CRUD/admin endpoints with an explicit authorization error.",
+      "reason": "The provided backend diff excerpt does not show authorization checks that gate internal CRUD/admin endpoints based on active kid context, nor explicit authorization error returns. Only the presence of an activeKidContext map and a comment about helper functions is visible due to truncation.",
+      "evidence": [
+        "backend/main.mo"
+      ]
+    }
+  ],
+  "hallucinated_features": [
+    {
+      "description": "Added/expanded Sprint Board UI and related workflow/status handling across activities and navigation.",
+      "reason": "Not requested in REQ-26..REQ-30; requirement scope explicitly focuses on kid-mode identity/context and kid-facing access boundaries.",
+      "evidence": [
+        "frontend/src/pages/sprint/SprintBoardPage.tsx",
+        "frontend/src/components/layout/SideNav.tsx",
+        "frontend/src/components/layout/Header.tsx",
+        "frontend/src/components/activities/ActivityDialog.tsx",
+        "frontend/src/pages/activities/ActivitiesPage.tsx",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Admin users management page and hooks that reference listing all users / role assignment UX scaffolding.",
+      "reason": "Not requested as part of kid-mode profiles/context work.",
+      "evidence": [
+        "frontend/src/pages/admin/AdminUsersPage.tsx",
+        "frontend/src/hooks/data/useAdminUsers.ts",
+        "frontend-file-summaries.txt"
+      ]
+    },
+    {
+      "description": "Broad client-side sample-data fallback and filtering behavior adjustments across programs, activities, orphanages, people, documentation.",
+      "reason": "Not requested in the kid-mode feature set.",
+      "evidence": [
+        "frontend/src/hooks/data/usePrograms.ts",
+        "frontend/src/hooks/data/useActivities.ts",
+        "frontend/src/hooks/data/useOrphanages.ts",
+        "frontend/src/hooks/data/usePeople.ts",
+        "frontend/src/hooks/data/useDocumentation.ts"
+      ]
+    }
+  ],
+  "confidence": 0.62,
+  "changed_files": [
+    "backend/main.mo",
+    "frontend-file-summaries.txt",
+    "frontend/src/App.tsx",
+    "frontend/src/components/activities/ActivityDialog.tsx",
+    "frontend/src/components/kidMode/KidModeLayout.tsx",
+    "frontend/src/components/kidMode/KidModeSelector.tsx",
+    "frontend/src/components/programs/ProgramScheduleCalendar.tsx",
+    "frontend/src/hooks/data/useActivities.ts",
+    "frontend/src/hooks/data/useAdminUsers.ts",
+    "frontend/src/hooks/data/useDocumentation.ts",
+    "frontend/src/hooks/data/useOrphanages.ts",
+    "frontend/src/hooks/data/usePeople.ts",
+    "frontend/src/hooks/data/useProgramAttachments.ts",
+    "frontend/src/hooks/data/usePrograms.ts",
+    "frontend/src/hooks/data/useScheduleEvents.ts",
+    "frontend/src/hooks/kidMode/useKidContext.ts",
+    "frontend/src/hooks/kidMode/useKidPrograms.ts",
+    "frontend/src/pages/activities/ActivitiesPage.tsx",
+    "frontend/src/pages/admin/AdminUsersPage.tsx",
+    "frontend/src/pages/documentation/DocumentationPage.tsx",
+    "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+    "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx",
+    "frontend/src/pages/organizations/OrganizationsPage.tsx",
+    "frontend/src/pages/people/PeoplePage.tsx",
+    "frontend/src/pages/programs/ProgramsPage.tsx",
+    "frontend/src/pages/sprint/SprintBoardPage.tsx",
+    "project_state.json"
+  ]
+}

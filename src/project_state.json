@@ -1,0 +1,371 @@
+{
+  "schemaVersion": "1.0.0",
+  "projectStateVersion": 74,
+  "summary": "Build the Namaa.Edu app as long-term infrastructure that generates and runs sustainable programs for Dhu'afa (Ramadan as initial momentum, not core identity), aligned with Namaa.Edu’s Islamic values and educational mission—starting as an internal operations dashboard for the Namaa core team to centralize documentation and execution, with a clear path to scale to external ecosystem users later (first external stakeholder: orphanage kids who can log in to their programs to access documents and participate in gamified processes designed by the team).",
+  "existing_features": [
+    {
+      "id": "IF-1",
+      "title": "Internet Identity authentication with internal-only workspace gate",
+      "synonyms": [
+        "II login",
+        "AuthGate",
+        "AdminOnly"
+      ],
+      "description": "Frontend supports Internet Identity sign-in and gates the app behind authentication, restricting access to an internal Namaa core-team workspace (with admin-only sections).",
+      "reqIds": [
+        "REQ-1"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-2",
+      "title": "Role-aware access control and admin user management",
+      "synonyms": [
+        "access-control",
+        "authorization mixin",
+        "admin users"
+      ],
+      "description": "Backend authorization/access-control added (Motoko) with role-aware structure (internal admins/editors and placeholders for future roles) and an admin UI page to manage users/roles.",
+      "reqIds": [
+        "REQ-5"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-3",
+      "title": "Core backend data model & APIs for Namaa ops documentation",
+      "synonyms": [
+        "Programs API",
+        "Activities API",
+        "Organizations API",
+        "People API",
+        "Documentation API"
+      ],
+      "description": "Backend canister implements core data model and APIs to centralize operations documentation across Programs, Partner Organizations, People, Activities, and Documentation entries.",
+      "reqIds": [
+        "REQ-2"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-4",
+      "title": "Internal operations dashboard UI with CRUD + archive flows",
+      "synonyms": [
+        "DashboardLayout",
+        "SideNav",
+        "Dialogs"
+      ],
+      "description": "Dashboard pages and dialogs implemented to create, view, edit, and archive Programs, Organizations, People, Activities, and Documentation in one place.",
+      "reqIds": [
+        "REQ-3"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-5",
+      "title": "Activity Log workflow with status progression and reflections",
+      "synonyms": [
+        "planning→scheduled→completed",
+        "post-activity reflections"
+      ],
+      "description": "Activities UI/workflow supports operational lifecycle states (planning, scheduled, completed) and captures outcomes via reflections/documentation after completion.",
+      "reqIds": [
+        "REQ-4"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-6",
+      "title": "Consistent warm-neutral dashboard theme (non-blue/purple) using shadcn/ui + Tailwind",
+      "synonyms": [
+        "design system",
+        "theme tokens",
+        "component states"
+      ],
+      "description": "Coherent visual theme applied across the app using shadcn/ui component set and Tailwind styling; enforces consistent typography, spacing, layout, and component states in a warm neutral palette (explicitly not blue/purple).",
+      "reqIds": [
+        "REQ-6"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-7",
+      "title": "First-run sample seed content demonstrating Programs → Activities → Documentation workflow",
+      "synonyms": [
+        "sampleData"
+      ],
+      "description": "Non-production seed data is included and visible in the UI to demonstrate the intended dashboard workflow on first run.",
+      "reqIds": [
+        "REQ-7"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-8",
+      "title": "Orphanage (Panti Asuhan) management module (backend + dashboard CRUD)",
+      "synonyms": [
+        "Orphanages",
+        "Panti Asuhan",
+        "orphanage directory"
+      ],
+      "description": "Added an Orphanages entity/module with supporting backend APIs/migrations and frontend dashboard UI (page, dialog, and data hooks) to create, edit, view, and archive/manage Panti Asuhan records alongside existing ops documentation.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-9",
+      "title": "First-login user profile setup (display name) for authenticated users",
+      "synonyms": [
+        "ProfileSetupDialog",
+        "current user profile"
+      ],
+      "description": "After Internet Identity authentication, the frontend prompts first-time users to complete basic profile details (e.g., display name) and persists/reads the current-user profile via backend APIs to improve internal ops usability.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-10",
+      "title": "Program document attachments (upload, list, download, remove) with backend blob storage + ProgramDialog UI",
+      "synonyms": [
+        "Program attachments",
+        "Documents section",
+        "blob-storage",
+        "StorageClient",
+        "useProgramAttachments"
+      ],
+      "description": "Implemented document attachments for Programs end-to-end: backend attachment metadata + persistent bytes storage (blob storage), authenticated APIs to upload/list/download/remove with validation, React Query hooks to manage attachment queries/mutations + cache invalidation, and Program details UI updated to display a Documents section with upload and per-attachment download/remove actions (including read-only handling for sample programs).",
+      "reqIds": [
+        "REQ-9",
+        "REQ-10",
+        "REQ-11",
+        "REQ-12",
+        "REQ-13",
+        "REQ-14",
+        "REQ-15",
+        "REQ-16",
+        "REQ-17",
+        "REQ-18",
+        "REQ-19"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-11",
+      "title": "Program image attachments (upload, list, preview, download, remove) alongside documents",
+      "synonyms": [
+        "Program image uploads",
+        "Images section",
+        "ProgramImagePreviewDialog"
+      ],
+      "description": "Extended Program attachments beyond documents to support image uploads end-to-end: backend blob storage + attachment metadata accept image MIME types, and the frontend Program dialog shows an Images section with upload plus per-image preview (dialog), download, and remove actions (respecting authenticated access and read-only sample/seed programs).",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-12",
+      "title": "Calendar-based scheduling for Activities (schedule events CRUD + calendar view)",
+      "synonyms": [
+        "ProgramScheduleCalendar",
+        "ScheduleEventDialog",
+        "schedule events",
+        "calendar UI"
+      ],
+      "description": "Implemented a calendar interface for scheduling: schedule events can be created/edited/removed via a dialog and viewed/managed in a calendar component, backed by new schedule-event APIs and React Query hooks (useScheduleEvents) to keep scheduling consistent with Activities status progression.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-13",
+      "title": "Sprint-style Kanban team dashboard for Activities across Programs",
+      "synonyms": [
+        "SprintBoardPage",
+        "Kanban",
+        "SprintBoardColumn",
+        "SprintBoardCard"
+      ],
+      "description": "Added an interactive sprint/Kanban board page that visualizes Activities as cards across workflow columns, with lightweight Program context shown on each card, enabling the core execution team to manage work globally across Programs.",
+      "reqIds": [],
+      "version": 1
+    },
+    {
+      "id": "IF-14",
+      "title": "Enhanced Activities lifecycle: Draft + Halted/Set Aside statuses with canonical status list across UI",
+      "synonyms": [
+        "activityStatuses",
+        "Draft status",
+        "Halted / Set Aside status",
+        "status pickers",
+        "status badges"
+      ],
+      "description": "Added distinct Activity statuses for Draft and Halted / Set Aside and updated the canonical status list used across the app so all status pickers, badges, and workflow views reflect the lifecycle: Draft, Planned, In Progress, Completed, Halted / Set Aside (with Archived remaining a separate decluttering state).",
+      "reqIds": [
+        "REQ-20",
+        "REQ-21"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-15",
+      "title": "Activity ownership + default \"My activities\" filtering on Sprint Board with toggle to show all non-archived",
+      "synonyms": [
+        "Activity owner",
+        "My activities",
+        "Sprint board default filter",
+        "Show all non-archived toggle"
+      ],
+      "description": "Implemented Activity ownership (owner captured at creation as the authenticated caller and exposed to the frontend), and updated the Sprint/Kanban board to default to showing only activities owned by the current user with a simple toggle to switch to showing all non-archived activities.",
+      "reqIds": [
+        "REQ-22",
+        "REQ-23"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-16",
+      "title": "Sprint Board grouping modes: group Activities by Program or by person in charge (owner)",
+      "synonyms": [
+        "Sprint board grouping",
+        "Group by Program",
+        "Group by owner",
+        "person in charge"
+      ],
+      "description": "Added Sprint Board grouping modes so Activities can be displayed grouped by Program or grouped by person in charge (Activity owner), with a UI control to switch grouping mode without losing the current filter/toggle state.",
+      "reqIds": [
+        "REQ-24"
+      ],
+      "version": 1
+    },
+    {
+      "id": "IF-17",
+      "title": "Authenticated minimal user directory API for labeling owners (principal + display name)",
+      "synonyms": [
+        "user directory",
+        "profiles directory",
+        "principal + displayName",
+        "non-admin profiles query"
+      ],
+      "description": "Backend now exposes an authenticated query to retrieve a minimal directory of user profiles (principal + display name) so the UI can label Activity owner/person-in-charge groupings without requiring admin-only access.",
+      "reqIds": [
+        "REQ-25"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-add-frontend-flow-to-support-kid-mode-entry-after-internet-identity-login-if-the-authenticated-user-has-one-or-more-kid-profiles-provide-a-kid-mode-selection-experience-select-a-kid-profile-when-multiple-exist-auto-enter-kid-mode-if-exactly-one-is-available-show-an-empty-state-message-if-none",
+      "title": "Add frontend flow to support kid-mode entry after Internet Identity login: if the authenticated user has one or more Kid Profiles, provide a Kid Mode selection experience (select a kid profile when multiple exist; auto-enter kid mode if exactly one is available; show an empty-state message if none).",
+      "reqIds": [
+        "REQ-29"
+      ],
+      "version": 1
+    },
+    {
+      "id": "feature-implement-a-kid-mode-interface-shell-that-is-clearly-distinct-from-the-internal-ops-dashboard-kid-friendly-layout-simplified-navigation-and-only-kid-allowed-sections-assigned-programs-program-attachments-documents-do-not-expose-internal-ops-navigation-in-kid-mode",
+      "title": "Implement a kid-mode interface shell that is clearly distinct from the internal ops dashboard: kid-friendly layout, simplified navigation, and only kid-allowed sections (Assigned Programs, Program attachments/documents). Do not expose internal ops navigation in kid mode.",
+      "reqIds": [
+        "REQ-30"
+      ],
+      "version": 1
+    }
+  ],
+  "new_feature_requests": [
+    {
+      "id": "AR-1",
+      "summary": "Core platform to connect Panti Asuhan, volunteers, and program builders for coordinating sustainable initiatives for Dhu'afa (Ramadan-focused initial use case).",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-2",
+      "summary": "Position the product as a program-generation infrastructure (not just a Ramadan program platform or a program curator), enabling continuous creation, matchmaking, and execution of beneficial initiatives.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-3",
+      "summary": "Internal-first Namaa.Edu operations dashboard to centralize scattered activity documentation and improve execution (Namaa team as primary user initially), designed to scale later to broader ecosystem users.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-6",
+      "summary": "Add operational visibility features: per-Program activity timeline/audit log and a \"What's coming up this week\" overview section on the dashboard.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-7",
+      "summary": "Add external stakeholder support for orphanage kids: kid/user login, access to their assigned Programs and Program documents/attachments, and support for team-designed gamified processes within programs.",
+      "reqIds": [],
+      "status": "pending"
+    },
+    {
+      "id": "AR-8",
+      "summary": "Introduce a backend Kid Profile domain model that is linked to an authenticated Internet Identity user (principal), so that a caretaker-operated Internet Identity account can represent one or more kids without creating separate authentication systems.",
+      "reqIds": [
+        "REQ-26"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-9",
+      "summary": "Add backend APIs to manage and resolve the caller’s kid context: list Kid Profiles available to the authenticated caller, select an active Kid Profile for the current session context, and fetch the active Kid Profile details for authorization and UI decisions.",
+      "reqIds": [
+        "REQ-27"
+      ],
+      "status": "pending"
+    },
+    {
+      "id": "AR-10",
+      "summary": "Enforce backend access boundaries for kid context: when operating as a kid (active Kid Profile selected), restrict access to kid-allowed resources only (assigned Programs and their attachments), and deny all internal operations features (e.g., Activities/Programs CRUD, internal logs, admin tools).",
+      "reqIds": [
+        "REQ-28"
+      ],
+      "status": "pending"
+    }
+  ],
+  "architecturalNotes": [
+    "Product positioning decision: Namaa.Edu should be known first as long-term infrastructure that enables and produces programs (continuous program generation), not primarily as a Ramadan-only platform and not merely a curator.",
+    "MVP/product direction: internal-first tool—Namaa core team are the primary initial users; the app should function as an ops/dashboard to improve execution and centralize documentation, while keeping an architecture that can scale to external ecosystem users later.",
+    "Authorization implemented as reusable Motoko modules (MixinAuthorization/access-control) with role-aware enforcement to support internal-first access now and future external roles later.",
+    "Frontend uses an auth gate + admin-only wrappers to enforce internal access, with Internet Identity as the sign-in provider.",
+    "Repository now includes a reusable build-template (React + ICP canister scaffolding) with standardized tooling (pnpm workspace, eslint rules, deployment scripts, and image resize/prune scripts) to support repeatable builds and exports.",
+    "Build-template now includes additional guardrails and tooling: custom ESLint rules (e.g., enforce Internet Identity provider usage; prevent problematic BigInt usage in query keys) plus image resize/prune scripts to standardize exports and reduce asset bloat.",
+    "Decision: proceed with implementing file uploads (documents/images) as attachments within Programs sub-blocks so related files can be stored and accessed in one place.",
+    "Scope refinement: implement Program attachments incrementally—start with document uploads first (then expand to images/other file types after the documents flow is stable).",
+    "Program attachments implementation uses a backend blob-storage module for persistent file bytes plus a Program-scoped attachment metadata model; frontend uses a StorageClient + React Query hooks (useProgramAttachments) to upload/list/download/remove and invalidate caches after mutations.",
+    "Attachments UI enforces sample/seed program records as read-only (no upload/remove) with a clear English message; attachment APIs are authenticated and validate allowed document MIME types and max file size.",
+    "Scope expansion: extend Program attachments beyond documents to support image uploads as a next step after stabilizing the documents flow.",
+    "UI direction: implement a calendar-based interface for scheduling (calendar view for planned/scheduled items) instead of only form/list-based scheduling.",
+    "Kanban/sprint dashboard should primarily visualize and manage Activities (time-bound work items), with the ability to group/filter by Program; columns/workflow should align with the existing Activity status progression so calendar, kanban, and per-Program timelines stay consistent.",
+    "Sprint/Kanban dashboard decision: cards represent Activities, with lightweight Program name/context shown on each card (Activities remain the primary unit of work).",
+    "Sprint/Kanban workflow decision: use simple, flexible columns by default, with an option to switch to a more detailed view/perspective when needed.",
+    "Sprint/Kanban audience/interaction decision: prioritize the core execution team (hands-on usage), implying an interactive board rather than a leadership-only read-only overview.",
+    "Scheduling implemented via a dedicated Schedule Events model + APIs and React Query hook (useScheduleEvents), rendered through a calendar UI (ProgramScheduleCalendar) with dialog-based CRUD (ScheduleEventDialog).",
+    "Program attachments now support images in addition to documents; UI includes image preview dialog and backend validation extended to image MIME types while maintaining authenticated access and read-only behavior for seed/sample programs.",
+    "Sprint/Kanban dashboard implemented as an interactive board page with Activities as cards and columns aligned to Activity status/workflow, including lightweight Program context on each card.",
+    "Sprint/Kanban refinement decision (pending): default columns should be Planned → In Progress → Completed with an additional Halted/Set Aside state; board should default to showing only Activities with an owner assigned, with a toggle to include all non-archived Activities; Detailed POV should support both expanded columns (full lifecycle) and additional filters/grouping (e.g., by Program/owner/date).",
+    "Sprint/Kanban workflow decision refinement: default simple columns should be Planned → In Progress → Completed, plus distinct statuses for Draft and Halted/Set Aside (paused/reschedulable).",
+    "Status semantics decision: Halted/Set Aside = temporarily paused but expected to resume; Archived = primarily to declutter default views while still retaining records (not necessarily 'no longer relevant').",
+    "Sprint/Kanban Detailed POV decision: implement BOTH expanded columns (full lifecycle/statuses) AND filters/grouping; support grouping by Program and by person in charge.",
+    "Sprint/Kanban default filtering decision: default board shows only 'My activities' (assigned to current user), with a simple toggle to show all non-archived Activities; additionally support viewing/grouping Activities by Program and by owner/person in charge.",
+    "Sprint/Kanban board behavior refinement: Draft Activities are treated as pre-execution items and should be excluded from the default sprint board view unless explicitly included via a view/toggle/filter.",
+    "Implementation approach decision: execute the Sprint/Kanban refinements in two passes for stability—(1) backend/data-model changes first (statuses, ownership, queries), then (2) UI/board refinements (default filters, grouping, detailed POV).",
+    "Activities lifecycle refinement implemented: canonical status list now includes Draft and Halted/Set Aside (paused/reschedulable) while Archived remains a separate boolean used for decluttering default views; Halted items are treated as active in non-archived views.",
+    "Activity ownership implemented: Activity records store an owner (authenticated caller at creation) and expose owner info for UI filtering/grouping.",
+    "Sprint/Kanban board refinements implemented: default view is \"My activities\" (owner = current user) with a toggle to show all non-archived activities; supports grouping by Program and by owner/person-in-charge.",
+    "Backend exposes an authenticated minimal user directory (principal + display name) to support labeling owner-based groupings without requiring admin-only access.",
+    "Implementation sequencing decision for upcoming work: build operational visibility features backend-first (data models/APIs) and do the UIs at the end for stability.",
+    "Scope/scale direction: begin designing for future external ecosystem access now, starting with one additional stakeholder type—orphange kids—who can authenticate and access their program materials and workflows.",
+    "External stakeholder auth decision (orphange kids v1): use Internet Identity for login; if kids are too small to use devices, access may be operated/supervised by a caretaker using the kid’s account/session.",
+    "External stakeholder UX decision (orphanage kids): kids should see a distinct kid-mode interface (different UI/IA) when they access the app, not the internal ops dashboard.",
+    "Data-model direction to resolve: decide whether orphanage kids are represented as (A) standard Users with a 'kid' role or (B) a distinct KidProfile entity linked to a User/Principal (user↔kid profile linkage), to support kid-specific fields and kid-mode UI safely."
+  ],
+  "knownIssues": [],
+  "isFixRequest": false,
+  "gameProjectType": "none",
+  "projectName": "Namaa.Edu",
+  "clarification_mode": "thinking",
+  "clarification_rounds": 0,
+  "requiresBackendChanges": true,
+  "requiresFrontendChanges": true
+}

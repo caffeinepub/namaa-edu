@@ -1,0 +1,70 @@
+{
+  "kind": "implementation_plan",
+  "version": "1.0",
+  "title": "Kid-mode UI context with Kid Profile selection flow",
+  "requirements": [
+    {
+      "id": "REQ-29",
+      "summary": "Add a post-login Kid Mode selection flow that lists available Kid Profiles for the current principal, auto-enters kid mode when only one exists, and shows an English empty-state when none exist.",
+      "acceptanceCriteria": [
+        "After login, the app can detect and display available Kid Profiles for the current principal",
+        "Selecting a Kid Profile switches the app into kid-mode context without requiring a separate login",
+        "User-facing text for the selection flow is in English"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/hooks/kidMode/useKidContext.ts",
+          "operation": "create",
+          "description": "Create kid-context React Query hooks that call backend capabilities to: list Kid Profiles for the authenticated caller, fetch the active Kid Profile context, select a Kid Profile as the active context, and clear the active context (exit kid mode)."
+        },
+        {
+          "path": "frontend/src/components/kidMode/KidModeSelector.tsx",
+          "operation": "create",
+          "description": "Add a Kid Mode selection UI that: shows a list when multiple Kid Profiles exist, triggers select to activate kid mode, auto-selects when exactly one exists (showing a friendly loading state), and shows an English empty-state message when none exist. Use shadcn-ui components to structure the selection experience; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "Wire the Kid Mode selection flow into the authenticated app start: after Internet Identity login and actor readiness, query available Kid Profiles and active kid context, then render KidModeSelector when appropriate. Ensure switching to kid mode happens without a separate login and that selection strings are in English."
+        }
+      ]
+    },
+    {
+      "id": "REQ-30",
+      "summary": "Implement a distinct kid-mode interface shell with simplified navigation that only exposes kid-allowed sections (Assigned Programs and Program attachments) and prevents access to internal ops UI while in kid mode.",
+      "acceptanceCriteria": [
+        "Kid-mode UI uses a different layout/navigation than the internal dashboard (visibly distinct)",
+        "In kid mode, internal pages/sections are not accessible via navigation and are blocked if directly navigated to",
+        "Kid-mode pages only display assigned Programs and allow viewing/downloading Program attachments for those Programs",
+        "All kid-mode user-facing strings are in English"
+      ],
+      "file_operations": [
+        {
+          "path": "frontend/src/components/kidMode/KidModeLayout.tsx",
+          "operation": "create",
+          "description": "Create a kid-mode layout shell that is visibly distinct from the internal dashboard (different header/side navigation styling and simplified structure). Include an 'Exit Kid Mode' control that clears the active kid context. Use shadcn-ui components for layout primitives where helpful; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+          "operation": "create",
+          "description": "Create a kid-mode page that lists only Programs assigned to the active Kid Profile (using the active Kid Profile programIds and Program read capability). All user-facing strings must be English. Use shadcn-ui components for cards/lists as needed; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx",
+          "operation": "create",
+          "description": "Create a kid-mode page/view that shows attachments/documents for a selected assigned Program and supports viewing/downloading via existing download mechanics. Ensure only assigned Programs can be selected and only their attachments are displayed. All user-facing strings must be English. Use shadcn-ui components for tables/dialogs/buttons as needed; verify the component's usage instructions before implementing."
+        },
+        {
+          "path": "frontend/src/hooks/kidMode/useKidPrograms.ts",
+          "operation": "create",
+          "description": "Add kid-mode data hooks to derive the assigned Program list (filtering by the active Kid Profile’s assigned programIds) and to fetch attachments for a selected assigned Program. Ensure hooks gracefully handle missing active kid context."
+        },
+        {
+          "path": "frontend/src/App.tsx",
+          "operation": "modify",
+          "description": "When an active Kid Profile context exists, render the kid-mode layout instead of the internal DashboardLayout, so internal navigation/sections are not accessible while in kid mode. Ensure direct access attempts to internal sections are blocked by design (kid layout rendered exclusively while kid context is active)."
+        }
+      ]
+    }
+  ]
+}

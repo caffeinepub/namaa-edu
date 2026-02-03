@@ -1,0 +1,109 @@
+{
+  "kind": "coverage_report",
+  "version": "1.0",
+  "generatedAt": "2026-02-03T18:41:50.125Z",
+  "sources": {
+    "buildRequest": true,
+    "implementationPlan": true
+  },
+  "requirements": {
+    "total": 5,
+    "implemented": 2,
+    "items": [
+      {
+        "id": "REQ-26",
+        "summary": "Introduce a backend Kid Profile domain model that is linked to an authenticated Internet Identity user (principal), so that a caretaker-operated Internet Identity account can represent one or more kids without creating separate authentication systems.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-27",
+        "summary": "Add backend APIs to manage and resolve the caller’s kid context: list Kid Profiles available to the authenticated caller, select an active Kid Profile for the current session context, and fetch the active Kid Profile details for authorization and UI decisions.",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-28",
+        "summary": "Enforce backend access boundaries for kid context: when operating as a kid (active Kid Profile selected), restrict access to kid-allowed resources only (assigned Programs and their attachments), and deny all internal operations features (e.g., Activities/Programs CRUD, internal logs, admin tools).",
+        "status": "unknown",
+        "plannedFiles": [],
+        "matchedFiles": []
+      },
+      {
+        "id": "REQ-29",
+        "summary": "Add frontend flow to support kid-mode entry after Internet Identity login: if the authenticated user has one or more Kid Profiles, provide a Kid Mode selection experience (select a kid profile when multiple exist; auto-enter kid mode if exactly one is available; show an empty-state message if none).",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/hooks/kidMode/useKidContext.ts",
+          "frontend/src/components/kidMode/KidModeSelector.tsx",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/hooks/kidMode/useKidContext.ts",
+          "frontend/src/components/kidMode/KidModeSelector.tsx",
+          "frontend/src/App.tsx"
+        ]
+      },
+      {
+        "id": "REQ-30",
+        "summary": "Implement a kid-mode interface shell that is clearly distinct from the internal ops dashboard: kid-friendly layout, simplified navigation, and only kid-allowed sections (Assigned Programs, Program attachments/documents). Do not expose internal ops navigation in kid mode.",
+        "status": "implemented",
+        "plannedFiles": [
+          "frontend/src/components/kidMode/KidModeLayout.tsx",
+          "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+          "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx",
+          "frontend/src/hooks/kidMode/useKidPrograms.ts",
+          "frontend/src/App.tsx"
+        ],
+        "matchedFiles": [
+          "frontend/src/components/kidMode/KidModeLayout.tsx",
+          "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+          "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx",
+          "frontend/src/hooks/kidMode/useKidPrograms.ts",
+          "frontend/src/App.tsx"
+        ]
+      }
+    ]
+  },
+  "changedFiles": [
+    "backend/main.mo",
+    "build-request.json",
+    "feature_evidence.json",
+    "frontend-file-summaries.txt",
+    "frontend-implementation-plan.json",
+    "frontend/src/App.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/components/activities/ActivityDialog.tsx",
+    "frontend/src/components/kidMode/KidModeLayout.tsx",
+    "frontend/src/components/kidMode/KidModeSelector.tsx",
+    "frontend/src/components/programs/ProgramScheduleCalendar.tsx",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
+    "frontend/src/hooks/data/useActivities.ts",
+    "frontend/src/hooks/data/useAdminUsers.ts",
+    "frontend/src/hooks/data/useDocumentation.ts",
+    "frontend/src/hooks/data/useOrphanages.ts",
+    "frontend/src/hooks/data/usePeople.ts",
+    "frontend/src/hooks/data/useProgramAttachments.ts",
+    "frontend/src/hooks/data/usePrograms.ts",
+    "frontend/src/hooks/data/useScheduleEvents.ts",
+    "frontend/src/hooks/kidMode/useKidContext.ts",
+    "frontend/src/hooks/kidMode/useKidPrograms.ts",
+    "frontend/src/pages/activities/ActivitiesPage.tsx",
+    "frontend/src/pages/admin/AdminUsersPage.tsx",
+    "frontend/src/pages/documentation/DocumentationPage.tsx",
+    "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+    "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx",
+    "frontend/src/pages/organizations/OrganizationsPage.tsx",
+    "frontend/src/pages/people/PeoplePage.tsx",
+    "frontend/src/pages/programs/ProgramsPage.tsx",
+    "frontend/src/pages/sprint/SprintBoardPage.tsx",
+    "project_state.json",
+    "scratch/component-selection.json",
+    "spec.md",
+    "spec_vs_diff_report.json"
+  ]
+}

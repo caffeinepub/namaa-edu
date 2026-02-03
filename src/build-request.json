@@ -1,0 +1,113 @@
+{
+  "kind": "build_request",
+  "title": "Add Kid Profiles linked to Internet Identity users and enable kid-mode UI context",
+  "priority": "normal",
+  "requirements": [
+    {
+      "id": "REQ-26",
+      "text": "Introduce a backend Kid Profile domain model that is linked to an authenticated Internet Identity user (principal), so that a caretaker-operated Internet Identity account can represent one or more kids without creating separate authentication systems.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-20"
+        ],
+        "quotes": [
+          "Use Internet Identity. But, if the kids are too small to use gadgets, it can be operated by their caretaker.",
+          "What do you mean by a distinct kidprofile linked to a user?"
+        ]
+      },
+      "acceptanceCriteria": [
+        "Backend persists Kid Profiles in stable storage and associates them to an Internet Identity principal",
+        "A single principal can be associated with multiple Kid Profiles (to support caretaker-operated access)",
+        "Kid Profile data is stored separately from internal staff user role/profile data (no mixing kid metadata into staff role fields)"
+      ]
+    },
+    {
+      "id": "REQ-27",
+      "text": "Add backend APIs to manage and resolve the caller’s kid context: list Kid Profiles available to the authenticated caller, select an active Kid Profile for the current session context, and fetch the active Kid Profile details for authorization and UI decisions.",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-20"
+        ],
+        "quotes": [
+          "I want them, when they access the app, to see a different interface modeled for kids."
+        ]
+      },
+      "acceptanceCriteria": [
+        "An authenticated caller can fetch the Kid Profiles they are allowed to operate",
+        "The system can return a clear 'effective context' for the caller (e.g., internal staff context vs kid context) based on whether an active Kid Profile is selected",
+        "Authorization checks can reliably determine whether a request is being made in kid context or internal context"
+      ]
+    },
+    {
+      "id": "REQ-28",
+      "text": "Enforce backend access boundaries for kid context: when operating as a kid (active Kid Profile selected), restrict access to kid-allowed resources only (assigned Programs and their attachments), and deny all internal operations features (e.g., Activities/Programs CRUD, internal logs, admin tools).",
+      "target": "backend",
+      "source": {
+        "messageIds": [
+          "msg-20"
+        ],
+        "quotes": [
+          "I agree."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Kid context cannot call internal CRUD/admin endpoints successfully (returns an explicit authorization error)",
+        "Kid context can only read Programs that are assigned to the active Kid Profile",
+        "Kid context can only list/download Program attachments for assigned Programs"
+      ]
+    },
+    {
+      "id": "REQ-29",
+      "text": "Add frontend flow to support kid-mode entry after Internet Identity login: if the authenticated user has one or more Kid Profiles, provide a Kid Mode selection experience (select a kid profile when multiple exist; auto-enter kid mode if exactly one is available; show an empty-state message if none).",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-20"
+        ],
+        "quotes": [
+          "I want them, when they access the app, to see a different interface modeled for kids."
+        ]
+      },
+      "acceptanceCriteria": [
+        "After login, the app can detect and display available Kid Profiles for the current principal",
+        "Selecting a Kid Profile switches the app into kid-mode context without requiring a separate login",
+        "User-facing text for the selection flow is in English"
+      ]
+    },
+    {
+      "id": "REQ-30",
+      "text": "Implement a kid-mode interface shell that is clearly distinct from the internal ops dashboard: kid-friendly layout, simplified navigation, and only kid-allowed sections (Assigned Programs, Program attachments/documents). Do not expose internal ops navigation in kid mode.",
+      "target": "frontend",
+      "source": {
+        "messageIds": [
+          "msg-20"
+        ],
+        "quotes": [
+          "I want them, when they access the app, to see a different interface modeled for kids."
+        ]
+      },
+      "acceptanceCriteria": [
+        "Kid-mode UI uses a different layout/navigation than the internal dashboard (visibly distinct)",
+        "In kid mode, internal pages/sections are not accessible via navigation and are blocked if directly navigated to",
+        "Kid-mode pages only display assigned Programs and allow viewing/downloading Program attachments for those Programs",
+        "All kid-mode user-facing strings are in English"
+      ]
+    }
+  ],
+  "constraints": [
+    "Backend must remain a single-actor Motoko canister; place all new logic in backend/main.mo and only add backend/migration.mo changes if existing stable state requires migration.",
+    "Do not edit any files under frontend immutable paths (frontend/src/hooks/useInternetIdentity.ts, frontend/src/hooks/useInternetIdentity.tsx, frontend/src/hooks/useActor.ts, frontend/src/main.tsx, frontend/src/components/ui). Compose new components/pages around them.",
+    "Authentication must remain Internet Identity (no third-party auth providers)."
+  ],
+  "nonGoals": [
+    "Do not implement non-Internet-Identity authentication flows (usernames/passwords, OAuth providers, etc.).",
+    "Do not implement real-time features (WebSockets/chat/push notifications).",
+    "Do not build the full gamified processes system in this change unless explicitly requested next (this request is focused on kid-mode identity/context and kid-facing access boundaries)."
+  ],
+  "imageRequirements": {
+    "required": [],
+    "edits": []
+  }
+}

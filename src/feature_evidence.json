@@ -1,0 +1,51 @@
+{
+  "kind": "feature_evidence_report",
+  "features": [
+    {
+      "featureId": "feature-add-frontend-flow-to-support-kid-mode-entry-after-internet-identity-login-if-the-authenticated-user-has-one-or-more-kid-profiles-provide-a-kid-mode-selection-experience-select-a-kid-profile-when-multiple-exist-auto-enter-kid-mode-if-exactly-one-is-available-show-an-empty-state-message-if-none",
+      "featureTitle": "Add frontend flow to support kid-mode entry after Internet Identity login: if the authenticated user has one or more Kid Profiles, provide a Kid Mode selection experience (select a kid profile when multiple exist; auto-enter kid mode if exactly one is available; show an empty-state message if none).",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/kidMode/KidModeSelector.tsx",
+        "frontend/src/hooks/kidMode/useKidContext.ts"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-29"
+      ],
+      "confidence": "high"
+    },
+    {
+      "featureId": "feature-implement-a-kid-mode-interface-shell-that-is-clearly-distinct-from-the-internal-ops-dashboard-kid-friendly-layout-simplified-navigation-and-only-kid-allowed-sections-assigned-programs-program-attachments-documents-do-not-expose-internal-ops-navigation-in-kid-mode",
+      "featureTitle": "Implement a kid-mode interface shell that is clearly distinct from the internal ops dashboard: kid-friendly layout, simplified navigation, and only kid-allowed sections (Assigned Programs, Program attachments/documents). Do not expose internal ops navigation in kid mode.",
+      "files": [
+        "frontend/src/App.tsx",
+        "frontend/src/components/kidMode/KidModeLayout.tsx",
+        "frontend/src/hooks/kidMode/useKidPrograms.ts",
+        "frontend/src/pages/kidMode/AssignedProgramsPage.tsx",
+        "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx"
+      ],
+      "components": [
+        "authorization@4.0.0",
+        "core-infrastructure@1.0.2",
+        "shadcn-ui@1.0.0",
+        "build-template-react@1.0.0",
+        "initial-app@1.0.0",
+        "github-export-icp-cli@1.0.0",
+        "blob-storage@4.0.0"
+      ],
+      "testIds": [
+        "REQ-30"
+      ],
+      "confidence": "high"
+    }
+  ]
+}
