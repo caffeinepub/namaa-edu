@@ -8,8 +8,9 @@ import PeoplePage from '../../pages/people/PeoplePage';
 import DocumentationPage from '../../pages/documentation/DocumentationPage';
 import AdminUsersPage from '../../pages/admin/AdminUsersPage';
 import SprintBoardPage from '../../pages/sprint/SprintBoardPage';
+import OperationalVisibilityPage from '../../pages/visibility/OperationalVisibilityPage';
 
-export type DashboardSection = 'programs' | 'activities' | 'organizations' | 'people' | 'documentation' | 'admin' | 'sprintBoard';
+export type DashboardSection = 'programs' | 'activities' | 'organizations' | 'people' | 'documentation' | 'admin' | 'sprintBoard' | 'visibility';
 
 export default function DashboardLayout() {
   const [currentSection, setCurrentSection] = useState<DashboardSection>('programs');
@@ -30,6 +31,8 @@ export default function DashboardLayout() {
         return <AdminUsersPage />;
       case 'sprintBoard':
         return <SprintBoardPage />;
+      case 'visibility':
+        return <OperationalVisibilityPage />;
       default:
         return <ProgramsPage />;
     }

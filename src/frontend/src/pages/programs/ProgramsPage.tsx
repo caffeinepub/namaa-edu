@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, Search, Archive, BookOpen, Info } from 'lucide-react';
 import ProgramDialog from '../../components/programs/ProgramDialog';
 import ArchiveConfirmDialog from '../../components/common/ArchiveConfirmDialog';
+import MyFocusTodaySection from '../../components/programs/MyFocusTodaySection';
 import { Program } from '../../backend';
 import { toast } from 'sonner';
 
@@ -66,6 +67,10 @@ export default function ProgramsPage() {
 
   return (
     <div className="space-y-6">
+      {/* My Focus Today Section - New additive block */}
+      <MyFocusTodaySection />
+
+      {/* Existing Programs Page Content */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Manage Programs</h3>

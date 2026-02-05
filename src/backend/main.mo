@@ -6,9 +6,14 @@ import Iter "mo:core/Iter";
 import Blob "mo:core/Blob";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
+import Time "mo:core/Time";
+import Int "mo:core/Int";
+
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
+
+// Specify the data migration function in the with-clause.
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -16,7 +21,7 @@ actor {
   include MixinStorage();
 
   // ------------------------------------------------
-  // Data Models and Core Types
+  // Data Models and Core Types (with TimelineEvent)
   // ------------------------------------------------
   type Orphanage = {
     id : Text;
@@ -133,8 +138,19 @@ actor {
     isActive : Bool;
   };
 
+  // Program Timeline & Upcoming Events
+  type TimelineEvent = {
+    id : Nat;
+    programId : Text;
+    eventType : Text;
+    relatedId : ?Text;
+    timestamp : Nat;
+    details : ?Text;
+    actorPrincipal : ?Principal;
+  };
+
   // ------------------------------------------------
-  // Persistent Storage Structures
+  // Persistent Storage Structures + Timeline Events
   // ------------------------------------------------
   let orphanages = Map.empty<Text, Orphanage>();
   let userProfiles = Map.empty<Principal, UserProfile>();
@@ -147,6 +163,7 @@ actor {
   let scheduleEvents = Map.empty<Text, ScheduleEvent>();
   let kidProfiles = Map.empty<Text, KidProfile>();
   let kidProfilesByCaretaker = Map.empty<Principal, [Text]>();
+  let timelineEvents = Map.empty<Text, [TimelineEvent]>();
 
   // Active kid context per caller (session state)
   let activeKidContext = Map.empty<Principal, Text>();
@@ -156,12 +173,11 @@ actor {
   // ------------------------------------------------
   var peopleIdCounter = 1;
   var documentationEntryCounter = 1;
+  var timelineEventCounter = 0;
 
   // ------------------------------------------------
   // Helper Functions for Kid Context Authorization
   // ------------------------------------------------
-
-  // Check if caller is operating in kid context
   func isKidContext(caller : Principal) : Bool {
     switch (activeKidContext.get(caller)) {
       case (null) { false };
@@ -169,7 +185,6 @@ actor {
     };
   };
 
-  // Get active kid profile for caller
   func getActiveKidProfile(caller : Principal) : ?KidProfile {
     switch (activeKidContext.get(caller)) {
       case (null) { null };
@@ -177,7 +192,6 @@ actor {
     };
   };
 
-  // Verify caller owns the kid profile
   func verifyKidOwnership(caller : Principal, kidId : Text) : Bool {
     switch (kidProfiles.get(kidId)) {
       case (null) { false };
@@ -185,7 +199,6 @@ actor {
     };
   };
 
-  // Check if kid has access to a program
   func kidHasAccessToProgram(kidProfile : KidProfile, programId : Text) : Bool {
     switch (kidProfile.programIds.find(func(id : Text) : Bool { id == programId })) {
       case (null) { false };
@@ -193,7 +206,6 @@ actor {
     };
   };
 
-  // Block internal operations when in kid context
   func blockIfKidContext(caller : Principal) {
     if (isKidContext(caller)) {
       Runtime.trap("Unauthorized: Internal operations not allowed in kid context");
@@ -203,7 +215,6 @@ actor {
   // ------------------------------------------------
   // User Profile Management
   // ------------------------------------------------
-
   public query ({ caller }) func getCallerUserProfile() : async ?UserProfile {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can access profiles");
@@ -229,7 +240,6 @@ actor {
   // ------------------------------------------------
   // Kid Context Management
   // ------------------------------------------------
-
   public shared ({ caller }) func createKidProfile(firstName : Text, lastName : Text, age : Nat) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only authenticated users can create kid profiles");
@@ -300,7 +310,6 @@ actor {
     switch (kidProfiles.get(id)) {
       case (null) { null };
       case (?kid) {
-        // Only caretaker or admin can view
         if (kid.caretakerId != caller and not AccessControl.isAdmin(accessControlState, caller)) {
           Runtime.trap("Unauthorized: Can only view your own kid profiles");
         };
@@ -349,7 +358,6 @@ actor {
       };
     };
 
-    // Clear active context if this kid was selected
     switch (activeKidContext.get(caller)) {
       case (?activeId) {
         if (activeId == id) {
@@ -417,9 +425,7 @@ actor {
   // ------------------------------------------------
   // Program Management (with kid context restrictions)
   // ------------------------------------------------
-
   public query ({ caller }) func listPrograms() : async [Program] {
-    // In kid context: only return assigned programs
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         kidProfile.programIds.values().map(
@@ -443,7 +449,6 @@ actor {
         ).toArray();
       };
       case (null) {
-        // Normal context: return all programs
         programs.entries().map<(Text, Program), Program>(
             func((_, program) : (Text, Program)) : Program { program }
           ).toArray();
@@ -455,7 +460,6 @@ actor {
     switch (programs.get(id)) {
       case (null) { null };
       case (?program) {
-        // In kid context: verify access
         switch (getActiveKidProfile(caller)) {
           case (?kidProfile) {
             if (not kidHasAccessToProgram(kidProfile, id)) {
@@ -476,6 +480,7 @@ actor {
     blockIfKidContext(caller);
 
     programs.add(program.id, program);
+    recordTimelineEvent(program.id, "ProgramCreated", null, "Program created", caller);
     program.id;
   };
 
@@ -489,6 +494,7 @@ actor {
       case (null) { Runtime.trap("Program not found") };
       case (?_) {
         programs.add(id, program);
+        recordTimelineEvent(id, "ProgramUpdated", null, "Program updated", caller);
       };
     };
   };
@@ -500,14 +506,13 @@ actor {
     blockIfKidContext(caller);
 
     programs.remove(id);
+    recordTimelineEvent(id, "ProgramDeleted", null, "Program deleted", caller);
   };
 
   // ------------------------------------------------
   // Program Media Attachments (with kid context restrictions)
   // ------------------------------------------------
-
   public query ({ caller }) func listProgramMediaAttachments(programId : Text) : async [ProgramMediaAttachment] {
-    // Verify program access in kid context
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         if (not kidHasAccessToProgram(kidProfile, programId)) {
@@ -545,6 +550,7 @@ actor {
     };
 
     programMediaAttachments.add(upload.id, attachment);
+    recordTimelineEvent(attachment.programId, "AttachmentUploaded", ?attachment.id, "Attachment uploaded", caller);
     upload.id;
   };
 
@@ -554,15 +560,19 @@ actor {
     };
     blockIfKidContext(caller);
 
-    programMediaAttachments.remove(id);
+    switch (programMediaAttachments.get(id)) {
+      case (null) { Runtime.trap("Attachment not found") };
+      case (?attachment) {
+        programMediaAttachments.remove(id);
+        recordTimelineEvent(attachment.programId, "AttachmentDeleted", ?id, "Attachment deleted", caller);
+      };
+    };
   };
 
   // ------------------------------------------------
   // Schedule Events (with kid context restrictions)
   // ------------------------------------------------
-
   public query ({ caller }) func listScheduleEvents(programId : Text) : async [ScheduleEvent] {
-    // Verify program access in kid context
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         if (not kidHasAccessToProgram(kidProfile, programId)) {
@@ -588,6 +598,7 @@ actor {
     blockIfKidContext(caller);
 
     scheduleEvents.add(event.id, event);
+    recordTimelineEvent(event.programId, "ScheduleEventCreated", ?event.id, "Schedule event created", caller);
     event.id;
   };
 
@@ -598,6 +609,7 @@ actor {
     blockIfKidContext(caller);
 
     scheduleEvents.add(id, event);
+    recordTimelineEvent(event.programId, "ScheduleEventUpdated", ?id, "Schedule event updated", caller);
   };
 
   public shared ({ caller }) func deleteScheduleEvent(id : Text) : async () {
@@ -606,13 +618,55 @@ actor {
     };
     blockIfKidContext(caller);
 
-    scheduleEvents.remove(id);
+    switch (scheduleEvents.get(id)) {
+      case (null) { Runtime.trap("Schedule event not found") };
+      case (?event) {
+        scheduleEvents.remove(id);
+        recordTimelineEvent(event.programId, "ScheduleEventDeleted", ?id, "Schedule event deleted", caller);
+      };
+    };
+  };
+
+  public query ({ caller }) func getUpcomingEventsInWindow(timeWindow : ?Nat) : async [ScheduleEvent] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query upcoming events");
+    };
+
+    let now = Int.abs(Time.now() / 1_000_000_000);
+    let window = switch (timeWindow) {
+      case (null) { 604_800 };
+      case (?w) { w };
+    };
+
+    switch (getActiveKidProfile(caller)) {
+      case (?kidProfile) {
+        scheduleEvents.entries().filter(
+          func((_, event) : (Text, ScheduleEvent)) : Bool {
+            not event.isArchived and
+            event.startTimestamp >= now and 
+            event.startTimestamp <= (now + window) and
+            kidHasAccessToProgram(kidProfile, event.programId)
+          }
+        ).map<(Text, ScheduleEvent), ScheduleEvent>(
+          func((_, event) : (Text, ScheduleEvent)) : ScheduleEvent { event }
+        ).toArray();
+      };
+      case (null) {
+        scheduleEvents.entries().filter(
+          func((_, event) : (Text, ScheduleEvent)) : Bool {
+            not event.isArchived and
+            event.startTimestamp >= now and event.startTimestamp <= (now + window)
+          }
+        ).map<(Text, ScheduleEvent), ScheduleEvent>(
+          func((_, event) : (Text, ScheduleEvent)) : ScheduleEvent { event }
+        ).toArray();
+      };
+    };
   };
 
   // ------------------------------------------------
   // Activities (blocked in kid context)
   // ------------------------------------------------
-
   public query ({ caller }) func listActivities() : async [Activity] {
     blockIfKidContext(caller);
     activities.entries().map<(Text, Activity), Activity>(
@@ -632,6 +686,7 @@ actor {
     blockIfKidContext(caller);
 
     activities.add(activity.id, activity);
+    recordTimelineEvent(activity.programId, "ActivityCreated", ?activity.id, "Activity created", caller);
     activity.id;
   };
 
@@ -642,6 +697,7 @@ actor {
     blockIfKidContext(caller);
 
     activities.add(id, activity);
+    recordTimelineEvent(activity.programId, "ActivityUpdated", ?id, "Activity updated", caller);
   };
 
   public shared ({ caller }) func deleteActivity(id : Text) : async () {
@@ -650,13 +706,18 @@ actor {
     };
     blockIfKidContext(caller);
 
-    activities.remove(id);
+    switch (activities.get(id)) {
+      case (null) { Runtime.trap("Activity not found") };
+      case (?activity) {
+        activities.remove(id);
+        recordTimelineEvent(activity.programId, "ActivityDeleted", ?id, "Activity deleted", caller);
+      };
+    };
   };
 
   // ------------------------------------------------
   // Orphanages (blocked in kid context)
   // ------------------------------------------------
-
   public query ({ caller }) func listOrphanages() : async [Orphanage] {
     blockIfKidContext(caller);
     orphanages.entries().map<(Text, Orphanage), Orphanage>(
@@ -700,7 +761,6 @@ actor {
   // ------------------------------------------------
   // People (blocked in kid context)
   // ------------------------------------------------
-
   public query ({ caller }) func listPeople() : async [Person] {
     blockIfKidContext(caller);
     people.entries().map<(Nat, Person), Person>(
@@ -741,7 +801,6 @@ actor {
   // ------------------------------------------------
   // Documentation Entries (blocked in kid context)
   // ------------------------------------------------
-
   public query ({ caller }) func listDocumentationEntries() : async [DocumentationEntry] {
     blockIfKidContext(caller);
     documentationEntries.entries().map<(Nat, DocumentationEntry), DocumentationEntry>(
@@ -758,6 +817,15 @@ actor {
     let id = documentationEntryCounter;
     documentationEntryCounter += 1;
     documentationEntries.add(id, entry);
+
+    switch (activities.get(entry.activityId)) {
+      case (null) {
+        recordTimelineEvent(entry.activityId, "DocumentationEntryCreated", ?entry.idText, "Documentation entry created", caller);
+      };
+      case (?activity) {
+        recordTimelineEvent(activity.programId, "DocumentationEntryCreated", ?entry.idText, "Documentation entry created", caller);
+      };
+    };
     id;
   };
 
@@ -768,6 +836,15 @@ actor {
     blockIfKidContext(caller);
 
     documentationEntries.add(id, entry);
+
+    switch (activities.get(entry.activityId)) {
+      case (null) {
+        recordTimelineEvent(entry.activityId, "DocumentationEntryUpdated", ?entry.idText, "Documentation entry updated", caller);
+      };
+      case (?activity) {
+        recordTimelineEvent(activity.programId, "DocumentationEntryUpdated", ?entry.idText, "Documentation entry updated", caller);
+      };
+    };
   };
 
   public shared ({ caller }) func deleteDocumentationEntry(id : Nat) : async () {
@@ -776,6 +853,62 @@ actor {
     };
     blockIfKidContext(caller);
 
-    documentationEntries.remove(id);
+    switch (documentationEntries.get(id)) {
+      case (null) { Runtime.trap("Documentation entry not found") };
+      case (?entry) {
+        documentationEntries.remove(id);
+        switch (activities.get(entry.activityId)) {
+          case (null) {
+            recordTimelineEvent(entry.activityId, "DocumentationEntryDeleted", ?entry.idText, "Documentation entry deleted", caller);
+          };
+          case (?activity) {
+            recordTimelineEvent(activity.programId, "DocumentationEntryDeleted", ?entry.idText, "Documentation entry deleted", caller);
+          };
+        };
+      };
+    };
+  };
+
+  // ------------------------------------------------
+  // Program Timeline (Backend Audit/Timeline)
+  // ------------------------------------------------
+  func recordTimelineEvent(programId : Text, eventType : Text, relatedId : ?Text, details : Text, principal : Principal) {
+    let event : TimelineEvent = {
+      id = timelineEventCounter;
+      programId;
+      eventType;
+      relatedId;
+      timestamp = Int.abs(Time.now() / 1_000_000_000);
+      details = ?details;
+      actorPrincipal = ?principal;
+    };
+    timelineEventCounter += 1;
+
+    let existingEvents = switch (timelineEvents.get(programId)) {
+      case (null) { [] };
+      case (?events) { events };
+    };
+    let updatedEvents = [event].concat(existingEvents);
+    timelineEvents.add(programId, updatedEvents);
+  };
+
+  public query ({ caller }) func getProgramTimeline(programId : Text) : async [TimelineEvent] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can query program timeline");
+    };
+
+    switch (getActiveKidProfile(caller)) {
+      case (?kidProfile) {
+        if (not kidHasAccessToProgram(kidProfile, programId)) {
+          Runtime.trap("Unauthorized: Kid does not have access to this program");
+        };
+      };
+      case (null) {};
+    };
+
+    switch (timelineEvents.get(programId)) {
+      case (null) { [] };
+      case (?events) { events };
+    };
   };
 };

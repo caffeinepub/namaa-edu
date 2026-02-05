@@ -52,6 +52,8 @@ export function useCreateDocumentationEntry() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['documentation', variables.activityId] });
       queryClient.invalidateQueries({ queryKey: ['documentation'] });
+      // Invalidate all program timelines since we don't know which program this activity belongs to
+      queryClient.invalidateQueries({ queryKey: ['programTimeline'] });
     },
   });
 }
@@ -68,6 +70,8 @@ export function useArchiveDocumentationEntry() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['documentation'] });
+      // Invalidate all program timelines since we don't know which program this activity belongs to
+      queryClient.invalidateQueries({ queryKey: ['programTimeline'] });
     },
   });
 }

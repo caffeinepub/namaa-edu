@@ -106,6 +106,15 @@ export interface ScheduleEvent {
   'programId' : string,
   'location' : [] | [string],
 }
+export interface TimelineEvent {
+  'id' : bigint,
+  'timestamp' : bigint,
+  'details' : [] | [string],
+  'actorPrincipal' : [] | [Principal],
+  'programId' : string,
+  'relatedId' : [] | [string],
+  'eventType' : string,
+}
 export interface UserProfile { 'name' : string, 'role' : string }
 export type UserRole = { 'admin' : null } |
   { 'user' : null } |
@@ -163,6 +172,11 @@ export interface _SERVICE {
   'getKidProfile' : ActorMethod<[string], [] | [KidProfile]>,
   'getOrphanage' : ActorMethod<[string], [] | [Orphanage]>,
   'getProgram' : ActorMethod<[string], [] | [Program]>,
+  'getProgramTimeline' : ActorMethod<[string], Array<TimelineEvent>>,
+  'getUpcomingEventsInWindow' : ActorMethod<
+    [[] | [bigint]],
+    Array<ScheduleEvent>
+  >,
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listActivities' : ActorMethod<[], Array<Activity>>,

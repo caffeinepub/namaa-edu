@@ -26,6 +26,8 @@ export function useCreateScheduleEvent() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['scheduleEvents', variables.programId] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }
@@ -42,6 +44,8 @@ export function useArchiveScheduleEvent() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['scheduleEvents', variables.programId] });
+      queryClient.invalidateQueries({ queryKey: ['upcomingEvents'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }

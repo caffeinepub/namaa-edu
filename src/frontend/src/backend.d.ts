@@ -7,17 +7,6 @@ export interface None {
     __kind__: "None";
 }
 export type Option<T> = Some<T> | None;
-export interface ProgramMediaAttachment {
-    id: string;
-    contentType: string;
-    byteSize: bigint;
-    isImage: boolean;
-    isArchived: boolean;
-    filename: string;
-    programId: string;
-    uploadedAt: bigint;
-    uploadedBy: Principal;
-}
 export interface MediaAttachmentUpload {
     id: string;
     contentType: string;
@@ -51,6 +40,15 @@ export interface ScheduleEvent {
     startTimestamp: bigint;
     programId: string;
     location?: string;
+}
+export interface TimelineEvent {
+    id: bigint;
+    timestamp: bigint;
+    details?: string;
+    actorPrincipal?: Principal;
+    programId: string;
+    relatedId?: string;
+    eventType: string;
 }
 export interface KidProfile {
     id: string;
@@ -103,6 +101,17 @@ export interface Person {
     isActive: boolean;
     idText: string;
 }
+export interface ProgramMediaAttachment {
+    id: string;
+    contentType: string;
+    byteSize: bigint;
+    isImage: boolean;
+    isArchived: boolean;
+    filename: string;
+    programId: string;
+    uploadedAt: bigint;
+    uploadedBy: Principal;
+}
 export interface UserProfile {
     name: string;
     role: string;
@@ -138,6 +147,8 @@ export interface backendInterface {
     getKidProfile(id: string): Promise<KidProfile | null>;
     getOrphanage(id: string): Promise<Orphanage | null>;
     getProgram(id: string): Promise<Program | null>;
+    getProgramTimeline(programId: string): Promise<Array<TimelineEvent>>;
+    getUpcomingEventsInWindow(timeWindow: bigint | null): Promise<Array<ScheduleEvent>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listActivities(): Promise<Array<Activity>>;

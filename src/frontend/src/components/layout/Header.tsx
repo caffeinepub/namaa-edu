@@ -19,6 +19,7 @@ const sectionTitles: Record<DashboardSection, string> = {
   documentation: 'Documentation',
   admin: 'Admin',
   sprintBoard: 'Sprint Board',
+  visibility: 'Operational Visibility',
 };
 
 export default function Header({ currentSection }: HeaderProps) {

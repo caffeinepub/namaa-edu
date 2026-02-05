@@ -101,6 +101,15 @@ export const KidProfile = IDL.Record({
   'firstName' : IDL.Text,
 });
 export const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : IDL.Text });
+export const TimelineEvent = IDL.Record({
+  'id' : IDL.Nat,
+  'timestamp' : IDL.Nat,
+  'details' : IDL.Opt(IDL.Text),
+  'actorPrincipal' : IDL.Opt(IDL.Principal),
+  'programId' : IDL.Text,
+  'relatedId' : IDL.Opt(IDL.Text),
+  'eventType' : IDL.Text,
+});
 export const ProgramMediaAttachment = IDL.Record({
   'id' : IDL.Text,
   'contentType' : IDL.Text,
@@ -175,6 +184,16 @@ export const idlService = IDL.Service({
   'getKidProfile' : IDL.Func([IDL.Text], [IDL.Opt(KidProfile)], ['query']),
   'getOrphanage' : IDL.Func([IDL.Text], [IDL.Opt(Orphanage)], ['query']),
   'getProgram' : IDL.Func([IDL.Text], [IDL.Opt(Program)], ['query']),
+  'getProgramTimeline' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(TimelineEvent)],
+      ['query'],
+    ),
+  'getUpcomingEventsInWindow' : IDL.Func(
+      [IDL.Opt(IDL.Nat)],
+      [IDL.Vec(ScheduleEvent)],
+      ['query'],
+    ),
   'getUserProfile' : IDL.Func(
       [IDL.Principal],
       [IDL.Opt(UserProfile)],
@@ -313,6 +332,15 @@ export const idlFactory = ({ IDL }) => {
     'firstName' : IDL.Text,
   });
   const UserProfile = IDL.Record({ 'name' : IDL.Text, 'role' : IDL.Text });
+  const TimelineEvent = IDL.Record({
+    'id' : IDL.Nat,
+    'timestamp' : IDL.Nat,
+    'details' : IDL.Opt(IDL.Text),
+    'actorPrincipal' : IDL.Opt(IDL.Principal),
+    'programId' : IDL.Text,
+    'relatedId' : IDL.Opt(IDL.Text),
+    'eventType' : IDL.Text,
+  });
   const ProgramMediaAttachment = IDL.Record({
     'id' : IDL.Text,
     'contentType' : IDL.Text,
@@ -391,6 +419,16 @@ export const idlFactory = ({ IDL }) => {
     'getKidProfile' : IDL.Func([IDL.Text], [IDL.Opt(KidProfile)], ['query']),
     'getOrphanage' : IDL.Func([IDL.Text], [IDL.Opt(Orphanage)], ['query']),
     'getProgram' : IDL.Func([IDL.Text], [IDL.Opt(Program)], ['query']),
+    'getProgramTimeline' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(TimelineEvent)],
+        ['query'],
+      ),
+    'getUpcomingEventsInWindow' : IDL.Func(
+        [IDL.Opt(IDL.Nat)],
+        [IDL.Vec(ScheduleEvent)],
+        ['query'],
+      ),
     'getUserProfile' : IDL.Func(
         [IDL.Principal],
         [IDL.Opt(UserProfile)],

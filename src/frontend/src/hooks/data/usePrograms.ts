@@ -34,8 +34,9 @@ export function useCreateProgram() {
       if (!actor) throw new Error('Actor not available');
       return actor.createProgram(program);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.id] });
     },
   });
 }
@@ -49,8 +50,9 @@ export function useUpdateProgram() {
       if (!actor) throw new Error('Actor not available');
       return actor.updateProgram(id, program);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.id] });
     },
   });
 }
@@ -65,8 +67,9 @@ export function useArchiveProgram() {
       const archivedProgram = { ...program, isArchived: true };
       return actor.updateProgram(programId, archivedProgram);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['programs'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }

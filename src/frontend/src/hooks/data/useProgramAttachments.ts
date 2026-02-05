@@ -71,6 +71,7 @@ export function useUploadProgramAttachment() {
       queryClient.invalidateQueries({ queryKey: ['programAttachments', variables.programId] });
       queryClient.invalidateQueries({ queryKey: ['programDocuments', variables.programId] });
       queryClient.invalidateQueries({ queryKey: ['programImages', variables.programId] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }
@@ -116,6 +117,7 @@ export function useArchiveProgramAttachment() {
       queryClient.invalidateQueries({ queryKey: ['programAttachments', variables.programId] });
       queryClient.invalidateQueries({ queryKey: ['programDocuments', variables.programId] });
       queryClient.invalidateQueries({ queryKey: ['programImages', variables.programId] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }

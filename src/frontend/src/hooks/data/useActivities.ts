@@ -33,8 +33,9 @@ export function useCreateActivity() {
       if (!actor) throw new Error('Actor not available');
       return actor.createActivity(activity);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.programId] });
     },
   });
 }
@@ -49,8 +50,9 @@ export function useUpdateActivityStatus() {
       const updatedActivity = { ...activity, status: newStatus };
       return actor.updateActivity(activityId, updatedActivity);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.activity.programId] });
     },
   });
 }
@@ -65,8 +67,9 @@ export function useArchiveActivity() {
       const archivedActivity = { ...activity, isArchived: true };
       return actor.updateActivity(activityId, archivedActivity);
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['activities'] });
+      queryClient.invalidateQueries({ queryKey: ['programTimeline', variables.activity.programId] });
     },
   });
 }

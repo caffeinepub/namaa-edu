@@ -2,7 +2,7 @@ import { useIsCallerAdmin } from '../../hooks/queries/useCurrentUser';
 import { DashboardSection } from './DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { BookOpen, Users, Building2, Calendar, FileText, Settings, Kanban } from 'lucide-react';
+import { BookOpen, Users, Building2, Calendar, FileText, Settings, Kanban, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SideNavProps {
@@ -15,6 +15,7 @@ export default function SideNav({ currentSection, onSectionChange }: SideNavProp
 
   const navItems = [
     { id: 'sprintBoard' as DashboardSection, label: 'Sprint Board', icon: Kanban },
+    { id: 'visibility' as DashboardSection, label: 'Visibility', icon: Eye },
     { id: 'programs' as DashboardSection, label: 'Programs', icon: BookOpen },
     { id: 'activities' as DashboardSection, label: 'Activities', icon: Calendar },
     { id: 'organizations' as DashboardSection, label: 'Orphanages', icon: Building2 },
