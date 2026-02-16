@@ -1,93 +1,20 @@
 {
   "kind": "coverage_report",
   "version": "1.0",
-  "generatedAt": "2026-02-04T10:58:54.595Z",
+  "generatedAt": "2026-02-07T12:32:24.456Z",
   "sources": {
     "buildRequest": true,
     "implementationPlan": true
   },
   "requirements": {
-    "total": 7,
-    "implemented": 2,
+    "total": 1,
+    "implemented": 0,
     "items": [
       {
         "id": "REQ-1",
-        "summary": "Add a new “My focus today” section at the top of the internal dashboard landing experience by rendering it ABOVE the existing content on the Programs page (frontend/src/pages/programs/ProgramsPage.tsx), without removing or reordering the existing blocks below it.",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/pages/programs/ProgramsPage.tsx",
-          "frontend/src/components/programs/MyFocusTodaySection.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/pages/programs/ProgramsPage.tsx",
-          "frontend/src/components/programs/MyFocusTodaySection.tsx"
-        ]
-      },
-      {
-        "id": "REQ-2",
-        "summary": "Populate “My focus today” with two read-only lists: (1) “My open activities” using existing activities data (frontend/src/hooks/data/useActivities.ts) filtered to activities owned by the current caller and not archived; and (2) “Upcoming events” using existing upcoming events query (frontend/src/hooks/data/useOperationalVisibility.ts). Keep this deploy UI-only (no backend changes).",
-        "status": "implemented",
-        "plannedFiles": [
-          "frontend/src/components/programs/MyFocusTodaySection.tsx",
-          "frontend/src/pages/programs/ProgramsPage.tsx"
-        ],
-        "matchedFiles": [
-          "frontend/src/components/programs/MyFocusTodaySection.tsx",
-          "frontend/src/pages/programs/ProgramsPage.tsx"
-        ]
-      },
-      {
-        "id": "REQ-3",
-        "summary": "Make Activity ownership visible in Activities list cards (frontend/src/pages/activities/ActivitiesPage.tsx) and in Sprint Board activity cards (frontend/src/components/sprint/SprintBoardCard.tsx) by displaying an owner label derived from the Activity.owner principal and resolved profile name (reuse existing user profile lookup patterns from frontend/src/hooks/queries/useUserProfiles.ts).",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/hooks/queries/useUserProfiles.ts",
-          "frontend/src/pages/activities/ActivitiesPage.tsx",
-          "frontend/src/components/sprint/SprintBoardCard.tsx",
-          "frontend/src/components/sprint/SprintBoardColumn.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-4",
-        "summary": "Add a “Mine only” filter control to Activities page (frontend/src/pages/activities/ActivitiesPage.tsx) that, when enabled, filters the activity list to Activity.owner == current caller principal. The control must be in English and must not change global defaults.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/pages/activities/ActivitiesPage.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-5",
-        "summary": "Standardize trust signals for save/update flows by ensuring consistent disabled/loading states during mutations and showing explicit success toasts/messages for key flows that are part of Phase 2.1 (Activity create/update/status change, Documentation entry create/update). Reuse the existing toast pattern already used in pages/components (sonner).",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/components/activities/ActivityDialog.tsx",
-          "frontend/src/pages/sprint/SprintBoardPage.tsx",
-          "frontend/src/hooks/data/useDocumentation.ts",
-          "frontend/src/components/documentation/DocumentationEntryDialog.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-6",
-        "summary": "Improve timeline readability on the Operational Visibility page (frontend/src/pages/visibility/OperationalVisibilityPage.tsx) by replacing the current mechanical eventType formatting with human-readable English labels for known event types, without adding new timeline event types or changing backend data.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/pages/visibility/OperationalVisibilityPage.tsx"
-        ],
-        "matchedFiles": []
-      },
-      {
-        "id": "REQ-7",
-        "summary": "Add attachment download guardrails across UI surfaces that currently offer downloads while the attachment download/bytes plumbing is not implemented (full fix deferred). Where a download action would fail, hide/disable it and show a clear English message indicating downloads are not available yet.",
-        "status": "missing",
-        "plannedFiles": [
-          "frontend/src/hooks/data/useProgramAttachments.ts",
-          "frontend/src/components/programs/ProgramDialog.tsx",
-          "frontend/src/components/programs/ProgramImagePreviewDialog.tsx",
-          "frontend/src/pages/kidMode/ProgramAttachmentsPage.tsx"
-        ],
+        "summary": "Create a new Motoko source file in the backend (do not modify `backend/main.mo`) that is syntactically valid and contains a minimal, side-effect-free module (for example: a small `module { public let version : Text = \"noop\"; }`). The module must not be imported or referenced by the main actor and must not change runtime behavior or stable state.",
+        "status": "unknown",
+        "plannedFiles": [],
         "matchedFiles": []
       }
     ]
@@ -95,10 +22,11 @@
   "changedFiles": [
     "build-request.json",
     "feature_evidence.json",
-    "frontend-file-summaries.txt",
     "frontend-implementation-plan.json",
-    "frontend/src/components/programs/MyFocusTodaySection.tsx",
-    "frontend/src/pages/programs/ProgramsPage.tsx",
+    "frontend/src/backend.d.ts",
+    "frontend/src/backend.ts",
+    "frontend/src/declarations/backend.did.d.ts",
+    "frontend/src/declarations/backend.did.js",
     "project_state.json",
     "scratch/component-selection.json",
     "spec.md",

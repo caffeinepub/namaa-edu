@@ -4,16 +4,17 @@ import Array "mo:core/Array";
 import Nat "mo:core/Nat";
 import Iter "mo:core/Iter";
 import Blob "mo:core/Blob";
+import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 import Principal "mo:core/Principal";
-import Time "mo:core/Time";
 import Int "mo:core/Int";
+
 
 import MixinAuthorization "authorization/MixinAuthorization";
 import MixinStorage "blob-storage/Mixin";
 import AccessControl "authorization/access-control";
 
-// Specify the data migration function in the with-clause.
+// Major pain point: Large File Handling (chunks and single upload), replacements
 
 actor {
   let accessControlState = AccessControl.initState();
@@ -90,9 +91,8 @@ actor {
     isArchived : Bool;
   };
 
-  type ProgramMediaAttachment = {
+  type MediaAttachment = {
     id : Text;
-    programId : Text;
     filename : Text;
     contentType : Text;
     byteSize : Nat;
@@ -102,19 +102,53 @@ actor {
     isImage : Bool;
   };
 
+  type ActivityAttachment = {
+    metadata : MediaAttachment;
+    activityId : Text;
+    programId : Text;
+  };
+
+  type DocumentationAttachment = {
+    metadata : MediaAttachment;
+    documentationId : Nat;
+    programId : Text;
+  };
+
+  type StorageMediaAttachment = {
+    attachmentMetadata : MediaAttachment;
+    fileBytes : ?Blob;
+  };
+
   type MediaAttachmentUpload = {
     id : Text;
-    programId : Text;
     filename : Text;
     contentType : Text;
     byteSize : Nat;
-    fileBytes : Blob;
+    fileBytes : ?Blob;
     isImage : Bool;
   };
 
-  type ArchivedMediaAttachment = {
-    attachmentMetadata : ProgramMediaAttachment;
-    fileBytes : Blob;
+  type PartialChunkedUpload = {
+    id : Text;
+    filename : Text;
+    contentType : Text;
+    byteSize : Nat;
+    isImage : Bool;
+    currentSize : Nat;
+    chunks : ?Blob;
+    startTime : Nat;
+  };
+
+  type StoredActivityAttachment = {
+    storageMeta : StorageMediaAttachment;
+    activityId : Text;
+    programId : Text;
+  };
+
+  type StoredDocumentationAttachment = {
+    storageMeta : StorageMediaAttachment;
+    documentationId : Nat;
+    programId : Text;
   };
 
   type ScheduleEvent = {
@@ -149,21 +183,22 @@ actor {
     actorPrincipal : ?Principal;
   };
 
-  // ------------------------------------------------
   // Persistent Storage Structures + Timeline Events
-  // ------------------------------------------------
   let orphanages = Map.empty<Text, Orphanage>();
   let userProfiles = Map.empty<Principal, UserProfile>();
   let programs = Map.empty<Text, Program>();
   let activities = Map.empty<Text, Activity>();
   let people = Map.empty<Nat, Person>();
   let documentationEntries = Map.empty<Nat, DocumentationEntry>();
-  let programMediaAttachments = Map.empty<Text, ProgramMediaAttachment>();
-  let archivedMediaAttachments = Map.empty<Text, ArchivedMediaAttachment>();
+  let programMediaAttachments = Map.empty<Text, MediaAttachment>();
+  let archivedMediaAttachments = Map.empty<Text, StorageMediaAttachment>();
+  let activityAttachments = Map.empty<Text, StoredActivityAttachment>();
+  let documentationAttachments = Map.empty<Text, StoredDocumentationAttachment>();
   let scheduleEvents = Map.empty<Text, ScheduleEvent>();
   let kidProfiles = Map.empty<Text, KidProfile>();
   let kidProfilesByCaretaker = Map.empty<Principal, [Text]>();
   let timelineEvents = Map.empty<Text, [TimelineEvent]>();
+  let partialChunkedUploads = Map.empty<Text, PartialChunkedUpload>();
 
   // Active kid context per caller (session state)
   let activeKidContext = Map.empty<Principal, Text>();
@@ -331,10 +366,16 @@ actor {
   };
 
   public shared ({ caller }) func clearKidContext() : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can clear kid context");
+    };
     activeKidContext.remove(caller);
   };
 
   public query ({ caller }) func getActiveKidContext() : async ?KidProfile {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only authenticated users can view kid context");
+    };
     getActiveKidProfile(caller);
   };
 
@@ -426,6 +467,10 @@ actor {
   // Program Management (with kid context restrictions)
   // ------------------------------------------------
   public query ({ caller }) func listPrograms() : async [Program] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list programs");
+    };
+
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         kidProfile.programIds.values().map(
@@ -457,6 +502,10 @@ actor {
   };
 
   public query ({ caller }) func getProgram(id : Text) : async ?Program {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view programs");
+    };
+
     switch (programs.get(id)) {
       case (null) { null };
       case (?program) {
@@ -510,9 +559,13 @@ actor {
   };
 
   // ------------------------------------------------
-  // Program Media Attachments (with kid context restrictions)
+  // Program Media Attachments (with kid context)
   // ------------------------------------------------
-  public query ({ caller }) func listProgramMediaAttachments(programId : Text) : async [ProgramMediaAttachment] {
+  public query ({ caller }) func listProgramMediaAttachments(programId : Text) : async [MediaAttachment] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list program media attachments");
+    };
+
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         if (not kidHasAccessToProgram(kidProfile, programId)) {
@@ -523,37 +576,60 @@ actor {
     };
 
     programMediaAttachments.entries().filter(
-        func((_, attachment) : (Text, ProgramMediaAttachment)) : Bool {
-          attachment.programId == programId and not attachment.isArchived
+        func((_, attachment) : (Text, MediaAttachment)) : Bool {
+          not attachment.isArchived
         }
-      ).map<(Text, ProgramMediaAttachment), ProgramMediaAttachment>(
-          func((_, attachment) : (Text, ProgramMediaAttachment)) : ProgramMediaAttachment { attachment }
+      ).map<(Text, MediaAttachment), MediaAttachment>(
+          func((_, attachment) : (Text, MediaAttachment)) : MediaAttachment { attachment }
         ).toArray();
   };
 
+  // Upload+Persist File (Media Attachment)
   public shared ({ caller }) func uploadProgramMediaAttachment(upload : MediaAttachmentUpload) : async Text {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can upload attachments");
     };
     blockIfKidContext(caller);
 
-    let attachment : ProgramMediaAttachment = {
+    let attachment : MediaAttachment = {
       id = upload.id;
-      programId = upload.programId;
       filename = upload.filename;
       contentType = upload.contentType;
       byteSize = upload.byteSize;
-      uploadedAt = 0;
+      uploadedAt = Int.abs(Time.now() / 1_000_000_000);
       uploadedBy = caller;
       isArchived = false;
       isImage = upload.isImage;
     };
 
+    let archivedAttachment : StorageMediaAttachment = {
+      attachmentMetadata = attachment;
+      fileBytes = upload.fileBytes;
+    };
+
     programMediaAttachments.add(upload.id, attachment);
-    recordTimelineEvent(attachment.programId, "AttachmentUploaded", ?attachment.id, "Attachment uploaded", caller);
+    archivedMediaAttachments.add(upload.id, archivedAttachment);
     upload.id;
   };
 
+  // Get File for Attachment (including kid context)
+  public query ({ caller }) func getProgramMediaAttachmentFile(attachmentId : Text) : async ?Blob {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access attachment files");
+    };
+
+    switch (programMediaAttachments.get(attachmentId)) {
+      case (null) { null };
+      case (?_) {
+        switch (archivedMediaAttachments.get(attachmentId)) {
+          case (null) { null };
+          case (?archived) { archived.fileBytes };
+        };
+      };
+    };
+  };
+
+  // Soft-Archive Attachment
   public shared ({ caller }) func deleteProgramMediaAttachment(id : Text) : async () {
     if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
       Runtime.trap("Unauthorized: Only users can delete attachments");
@@ -563,16 +639,257 @@ actor {
     switch (programMediaAttachments.get(id)) {
       case (null) { Runtime.trap("Attachment not found") };
       case (?attachment) {
-        programMediaAttachments.remove(id);
-        recordTimelineEvent(attachment.programId, "AttachmentDeleted", ?id, "Attachment deleted", caller);
+        let archivedAttachment = {
+          attachment with isArchived = true
+        };
+        programMediaAttachments.add(id, archivedAttachment);
       };
     };
+  };
+
+  // Admin GC (Remove Real "Deleted" Attachments)
+  public shared ({ caller }) func adminGarbageCollectAttachments(_ : ()) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #admin))) {
+      Runtime.trap("Unauthorized: Admin-only function");
+    };
+
+    let deletedAttachmentIds = programMediaAttachments.entries().filter(
+        func((_, attachment) : (Text, MediaAttachment)) : Bool {
+          attachment.isArchived;
+        }
+      ).map(
+          func((id, _) : (Text, MediaAttachment)) : Text { id }
+        ).toArray();
+
+    for (id in deletedAttachmentIds.values()) {
+      archivedMediaAttachments.remove(id);
+      programMediaAttachments.remove(id);
+    };
+  };
+
+  // ------------------------------------------------
+  // New Activity Attachments (backend storage)
+  // ------------------------------------------------
+  public shared ({ caller }) func uploadActivityAttachment(activityId : Text, upload : MediaAttachmentUpload) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can upload attachments for activities");
+    };
+    blockIfKidContext(caller);
+
+    switch (activities.get(activityId)) {
+      case (null) { Runtime.trap("Activity not found") };
+      case (?activity) {
+        let attachment : MediaAttachment = {
+          id = upload.id;
+          filename = upload.filename;
+          contentType = upload.contentType;
+          byteSize = upload.byteSize;
+          uploadedAt = Int.abs(Time.now() / 1_000_000_000);
+          uploadedBy = caller;
+          isArchived = false;
+          isImage = upload.isImage;
+        };
+
+        let storageMeta : StorageMediaAttachment = {
+          attachmentMetadata = attachment;
+          fileBytes = upload.fileBytes;
+        };
+
+        let storedAttachment : StoredActivityAttachment = {
+          storageMeta;
+          activityId;
+          programId = activity.programId;
+        };
+
+        activityAttachments.add(upload.id, storedAttachment);
+
+        recordTimelineEvent(activity.programId, "ActivityAttachmentUploaded", ?activityId, "Activity uploaded attachment", caller);
+
+        upload.id;
+      };
+    };
+  };
+
+  public query ({ caller }) func getActivityAttachmentFile(attachmentId : Text) : async ?Blob {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access attachment files");
+    };
+
+    switch (activityAttachments.get(attachmentId)) {
+      case (null) { null };
+      case (?attachment) {
+        switch (getActiveKidProfile(caller)) {
+          case (?kidProfile) {
+            if (not kidHasAccessToProgram(kidProfile, attachment.programId)) {
+              Runtime.trap("Unauthorized: Kid does not have access to this program");
+            };
+          };
+          case (null) {};
+        };
+        attachment.storageMeta.fileBytes;
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteActivityAttachment(id : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete activity attachments");
+    };
+    blockIfKidContext(caller);
+
+    switch (activityAttachments.get(id)) {
+      case (null) { Runtime.trap("Attachment not found") };
+      case (?attachment) {
+        let archivedMetadata = {
+          attachment.storageMeta.attachmentMetadata with isArchived = true
+        };
+        let archivedStorageMeta = {
+          attachment.storageMeta with attachmentMetadata = archivedMetadata
+        };
+        let archivedAttachment = {
+          attachment with storageMeta = archivedStorageMeta
+        };
+        activityAttachments.add(id, archivedAttachment);
+
+        recordTimelineEvent(attachment.programId, "ActivityAttachmentDeleted", ?id, "Activity attachment deleted", caller);
+      };
+    };
+  };
+
+  public query ({ caller }) func listActivityAttachments(activityId : Text) : async [ActivityAttachment] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list activity attachments");
+    };
+
+    let results : [ActivityAttachment] = activityAttachments.values().toArray().filter(
+      func(attachment) {
+        attachment.activityId == activityId and not attachment.storageMeta.attachmentMetadata.isArchived
+      }
+    ).map(
+      func(attachment) {
+        {
+          metadata = attachment.storageMeta.attachmentMetadata;
+          activityId = attachment.activityId;
+          programId = attachment.programId;
+        };
+      }
+    );
+    results;
+  };
+
+  // ------------------------------------------------
+  // New Documentation Attachments (backend storage)
+  // ------------------------------------------------
+  public shared ({ caller }) func uploadDocumentationAttachment(documentationId : Nat, programId : Text, upload : MediaAttachmentUpload) : async Text {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can upload attachments for documentation entries");
+    };
+    blockIfKidContext(caller);
+
+    let attachment : MediaAttachment = {
+      id = upload.id;
+      filename = upload.filename;
+      contentType = upload.contentType;
+      byteSize = upload.byteSize;
+      uploadedAt = Int.abs(Time.now() / 1_000_000_000);
+      uploadedBy = caller;
+      isArchived = false;
+      isImage = upload.isImage;
+    };
+
+    let storageMeta : StorageMediaAttachment = {
+      attachmentMetadata = attachment;
+      fileBytes = upload.fileBytes;
+    };
+
+    let storedAttachment : StoredDocumentationAttachment = {
+      storageMeta;
+      documentationId;
+      programId;
+    };
+
+    documentationAttachments.add(upload.id, storedAttachment);
+
+    recordTimelineEvent(programId, "DocumentationAttachmentUploaded", ?documentationId.toText(), "Documentation uploaded attachment", caller);
+
+    upload.id;
+  };
+
+  public query ({ caller }) func getDocumentationAttachmentFile(attachmentId : Text) : async ?Blob {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can access attachment files");
+    };
+
+    switch (documentationAttachments.get(attachmentId)) {
+      case (null) { null };
+      case (?attachment) {
+        switch (getActiveKidProfile(caller)) {
+          case (?kidProfile) {
+            if (not kidHasAccessToProgram(kidProfile, attachment.programId)) {
+              Runtime.trap("Unauthorized: Kid does not have access to this program");
+            };
+          };
+          case (null) {};
+        };
+        attachment.storageMeta.fileBytes;
+      };
+    };
+  };
+
+  public shared ({ caller }) func deleteDocumentationAttachment(id : Text) : async () {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can delete documentation attachments");
+    };
+    blockIfKidContext(caller);
+
+    switch (documentationAttachments.get(id)) {
+      case (null) { Runtime.trap("Attachment not found") };
+      case (?attachment) {
+        let archivedMetadata = {
+          attachment.storageMeta.attachmentMetadata with isArchived = true
+        };
+        let archivedStorageMeta = {
+          attachment.storageMeta with attachmentMetadata = archivedMetadata
+        };
+        let archivedAttachment = {
+          attachment with storageMeta = archivedStorageMeta
+        };
+        documentationAttachments.add(id, archivedAttachment);
+
+        recordTimelineEvent(attachment.programId, "DocumentationAttachmentDeleted", ?id, "Documentation attachment deleted", caller);
+      };
+    };
+  };
+
+  public query ({ caller }) func listDocumentationAttachments(documentationId : Nat) : async [DocumentationAttachment] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list documentation attachments");
+    };
+
+    let results : [DocumentationAttachment] = documentationAttachments.values().toArray().filter(
+      func(attachment) {
+        attachment.documentationId == documentationId and not attachment.storageMeta.attachmentMetadata.isArchived
+      }
+    ).map(
+      func(attachment) {
+        {
+          metadata = attachment.storageMeta.attachmentMetadata;
+          documentationId = attachment.documentationId;
+          programId = attachment.programId;
+        };
+      }
+    );
+    results;
   };
 
   // ------------------------------------------------
   // Schedule Events (with kid context restrictions)
   // ------------------------------------------------
   public query ({ caller }) func listScheduleEvents(programId : Text) : async [ScheduleEvent] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list schedule events");
+    };
+
     switch (getActiveKidProfile(caller)) {
       case (?kidProfile) {
         if (not kidHasAccessToProgram(kidProfile, programId)) {
@@ -668,6 +985,9 @@ actor {
   // Activities (blocked in kid context)
   // ------------------------------------------------
   public query ({ caller }) func listActivities() : async [Activity] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list activities");
+    };
     blockIfKidContext(caller);
     activities.entries().map<(Text, Activity), Activity>(
         func((_, activity) : (Text, Activity)) : Activity { activity }
@@ -675,6 +995,9 @@ actor {
   };
 
   public query ({ caller }) func getActivity(id : Text) : async ?Activity {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view activities");
+    };
     blockIfKidContext(caller);
     activities.get(id);
   };
@@ -719,6 +1042,9 @@ actor {
   // Orphanages (blocked in kid context)
   // ------------------------------------------------
   public query ({ caller }) func listOrphanages() : async [Orphanage] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list orphanages");
+    };
     blockIfKidContext(caller);
     orphanages.entries().map<(Text, Orphanage), Orphanage>(
         func((_, orphanage) : (Text, Orphanage)) : Orphanage { orphanage }
@@ -726,6 +1052,9 @@ actor {
   };
 
   public query ({ caller }) func getOrphanage(id : Text) : async ?Orphanage {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can view orphanages");
+    };
     blockIfKidContext(caller);
     orphanages.get(id);
   };
@@ -762,6 +1091,9 @@ actor {
   // People (blocked in kid context)
   // ------------------------------------------------
   public query ({ caller }) func listPeople() : async [Person] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list people");
+    };
     blockIfKidContext(caller);
     people.entries().map<(Nat, Person), Person>(
         func((_, person) : (Nat, Person)) : Person { person }
@@ -802,6 +1134,9 @@ actor {
   // Documentation Entries (blocked in kid context)
   // ------------------------------------------------
   public query ({ caller }) func listDocumentationEntries() : async [DocumentationEntry] {
+    if (not (AccessControl.hasPermission(accessControlState, caller, #user))) {
+      Runtime.trap("Unauthorized: Only users can list documentation entries");
+    };
     blockIfKidContext(caller);
     documentationEntries.entries().map<(Nat, DocumentationEntry), DocumentationEntry>(
         func((_, entry) : (Nat, DocumentationEntry)) : DocumentationEntry { entry }

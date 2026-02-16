@@ -10,7 +10,7 @@ import { Plus, Search, Archive, FileText } from 'lucide-react';
 import DocumentationEntryDialog from '../../components/documentation/DocumentationEntryDialog';
 import ArchiveConfirmDialog from '../../components/common/ArchiveConfirmDialog';
 import { DocumentationEntry } from '../../backend';
-import { toast } from 'sonner';
+import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES } from '../../utils/mutationFeedback';
 
 export default function DocumentationPage() {
   const { data: documentation = [], isLoading } = useAllDocumentation();
@@ -41,21 +41,17 @@ export default function DocumentationPage() {
   };
 
   const handleArchive = async () => {
-    if (!archiveTarget) return;
+    if (!archiveTarget || archiveEntry.isPending) return;
+    
     try {
       await archiveEntry.mutateAsync({
         entryId: archiveTarget.id,
         entry: archiveTarget,
       });
-      toast.success('Documentation entry archived successfully');
+      showSuccessToast(SUCCESS_MESSAGES.documentationArchived);
       setArchiveTarget(null);
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to archive entry';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to archive documentation');
-      } else {
-        toast.error(errorMessage);
-      }
+    } catch (error: unknown) {
+      showErrorToast(error, 'Failed to archive documentation entry');
       setArchiveTarget(null);
     }
   };

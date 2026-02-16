@@ -1,18 +1,27 @@
-import { Activity, Program } from '../../backend';
+import { Activity, Program, UserProfile } from '../../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ACTIVITY_STATUS_COLORS } from '../../constants/activityStatuses';
 import { GripVertical } from 'lucide-react';
+import OwnerIndicator from '../common/OwnerIndicator';
 
 interface SprintBoardCardProps {
   activity: Activity;
   program: Program | null;
+  ownerProfile: UserProfile | null | undefined;
   isDetailed: boolean;
   onClick: () => void;
   isDraggable: boolean;
 }
 
-export default function SprintBoardCard({ activity, program, isDetailed, onClick, isDraggable }: SprintBoardCardProps) {
+export default function SprintBoardCard({ 
+  activity, 
+  program, 
+  ownerProfile,
+  isDetailed, 
+  onClick, 
+  isDraggable 
+}: SprintBoardCardProps) {
   const programName = program?.name || activity.programId;
   const isSample = activity.id.startsWith('sample-');
 
@@ -37,6 +46,11 @@ export default function SprintBoardCard({ activity, program, isDetailed, onClick
         <Badge variant="outline" className="text-xs font-normal">
           {programName}
         </Badge>
+        <OwnerIndicator 
+          owner={activity.owner} 
+          profile={ownerProfile}
+          size="sm"
+        />
         {isDetailed && (
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center justify-between">

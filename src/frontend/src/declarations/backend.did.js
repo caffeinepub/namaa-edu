@@ -110,16 +110,25 @@ export const TimelineEvent = IDL.Record({
   'relatedId' : IDL.Opt(IDL.Text),
   'eventType' : IDL.Text,
 });
-export const ProgramMediaAttachment = IDL.Record({
+export const MediaAttachment = IDL.Record({
   'id' : IDL.Text,
   'contentType' : IDL.Text,
   'byteSize' : IDL.Nat,
   'isImage' : IDL.Bool,
   'isArchived' : IDL.Bool,
   'filename' : IDL.Text,
-  'programId' : IDL.Text,
   'uploadedAt' : IDL.Nat,
   'uploadedBy' : IDL.Principal,
+});
+export const ActivityAttachment = IDL.Record({
+  'metadata' : MediaAttachment,
+  'activityId' : IDL.Text,
+  'programId' : IDL.Text,
+});
+export const DocumentationAttachment = IDL.Record({
+  'metadata' : MediaAttachment,
+  'documentationId' : IDL.Nat,
+  'programId' : IDL.Text,
 });
 export const MediaAttachmentUpload = IDL.Record({
   'id' : IDL.Text,
@@ -127,8 +136,7 @@ export const MediaAttachmentUpload = IDL.Record({
   'byteSize' : IDL.Nat,
   'isImage' : IDL.Bool,
   'filename' : IDL.Text,
-  'fileBytes' : IDL.Vec(IDL.Nat8),
-  'programId' : IDL.Text,
+  'fileBytes' : IDL.Opt(IDL.Vec(IDL.Nat8)),
 });
 
 export const idlService = IDL.Service({
@@ -159,6 +167,7 @@ export const idlService = IDL.Service({
     ),
   '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
   '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+  'adminGarbageCollectAttachments' : IDL.Func([IDL.Null], [], []),
   'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
   'assignProgramToKid' : IDL.Func([IDL.Text, IDL.Text], [], []),
   'clearKidContext' : IDL.Func([], [], []),
@@ -170,6 +179,8 @@ export const idlService = IDL.Service({
   'createProgram' : IDL.Func([Program], [IDL.Text], []),
   'createScheduleEvent' : IDL.Func([ScheduleEvent], [IDL.Text], []),
   'deleteActivity' : IDL.Func([IDL.Text], [], []),
+  'deleteActivityAttachment' : IDL.Func([IDL.Text], [], []),
+  'deleteDocumentationAttachment' : IDL.Func([IDL.Text], [], []),
   'deleteDocumentationEntry' : IDL.Func([IDL.Nat], [], []),
   'deleteKidProfile' : IDL.Func([IDL.Text], [], []),
   'deleteOrphanage' : IDL.Func([IDL.Text], [], []),
@@ -179,11 +190,26 @@ export const idlService = IDL.Service({
   'deleteScheduleEvent' : IDL.Func([IDL.Text], [], []),
   'getActiveKidContext' : IDL.Func([], [IDL.Opt(KidProfile)], ['query']),
   'getActivity' : IDL.Func([IDL.Text], [IDL.Opt(Activity)], ['query']),
+  'getActivityAttachmentFile' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
   'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
   'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+  'getDocumentationAttachmentFile' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
   'getKidProfile' : IDL.Func([IDL.Text], [IDL.Opt(KidProfile)], ['query']),
   'getOrphanage' : IDL.Func([IDL.Text], [IDL.Opt(Orphanage)], ['query']),
   'getProgram' : IDL.Func([IDL.Text], [IDL.Opt(Program)], ['query']),
+  'getProgramMediaAttachmentFile' : IDL.Func(
+      [IDL.Text],
+      [IDL.Opt(IDL.Vec(IDL.Nat8))],
+      ['query'],
+    ),
   'getProgramTimeline' : IDL.Func(
       [IDL.Text],
       [IDL.Vec(TimelineEvent)],
@@ -201,6 +227,16 @@ export const idlService = IDL.Service({
     ),
   'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
   'listActivities' : IDL.Func([], [IDL.Vec(Activity)], ['query']),
+  'listActivityAttachments' : IDL.Func(
+      [IDL.Text],
+      [IDL.Vec(ActivityAttachment)],
+      ['query'],
+    ),
+  'listDocumentationAttachments' : IDL.Func(
+      [IDL.Nat],
+      [IDL.Vec(DocumentationAttachment)],
+      ['query'],
+    ),
   'listDocumentationEntries' : IDL.Func(
       [],
       [IDL.Vec(DocumentationEntry)],
@@ -211,7 +247,7 @@ export const idlService = IDL.Service({
   'listPeople' : IDL.Func([], [IDL.Vec(Person)], ['query']),
   'listProgramMediaAttachments' : IDL.Func(
       [IDL.Text],
-      [IDL.Vec(ProgramMediaAttachment)],
+      [IDL.Vec(MediaAttachment)],
       ['query'],
     ),
   'listPrograms' : IDL.Func([], [IDL.Vec(Program)], ['query']),
@@ -229,6 +265,16 @@ export const idlService = IDL.Service({
   'updatePerson' : IDL.Func([IDL.Nat, Person], [], []),
   'updateProgram' : IDL.Func([IDL.Text, Program], [], []),
   'updateScheduleEvent' : IDL.Func([IDL.Text, ScheduleEvent], [], []),
+  'uploadActivityAttachment' : IDL.Func(
+      [IDL.Text, MediaAttachmentUpload],
+      [IDL.Text],
+      [],
+    ),
+  'uploadDocumentationAttachment' : IDL.Func(
+      [IDL.Nat, IDL.Text, MediaAttachmentUpload],
+      [IDL.Text],
+      [],
+    ),
   'uploadProgramMediaAttachment' : IDL.Func(
       [MediaAttachmentUpload],
       [IDL.Text],
@@ -341,16 +387,25 @@ export const idlFactory = ({ IDL }) => {
     'relatedId' : IDL.Opt(IDL.Text),
     'eventType' : IDL.Text,
   });
-  const ProgramMediaAttachment = IDL.Record({
+  const MediaAttachment = IDL.Record({
     'id' : IDL.Text,
     'contentType' : IDL.Text,
     'byteSize' : IDL.Nat,
     'isImage' : IDL.Bool,
     'isArchived' : IDL.Bool,
     'filename' : IDL.Text,
-    'programId' : IDL.Text,
     'uploadedAt' : IDL.Nat,
     'uploadedBy' : IDL.Principal,
+  });
+  const ActivityAttachment = IDL.Record({
+    'metadata' : MediaAttachment,
+    'activityId' : IDL.Text,
+    'programId' : IDL.Text,
+  });
+  const DocumentationAttachment = IDL.Record({
+    'metadata' : MediaAttachment,
+    'documentationId' : IDL.Nat,
+    'programId' : IDL.Text,
   });
   const MediaAttachmentUpload = IDL.Record({
     'id' : IDL.Text,
@@ -358,8 +413,7 @@ export const idlFactory = ({ IDL }) => {
     'byteSize' : IDL.Nat,
     'isImage' : IDL.Bool,
     'filename' : IDL.Text,
-    'fileBytes' : IDL.Vec(IDL.Nat8),
-    'programId' : IDL.Text,
+    'fileBytes' : IDL.Opt(IDL.Vec(IDL.Nat8)),
   });
   
   return IDL.Service({
@@ -390,6 +444,7 @@ export const idlFactory = ({ IDL }) => {
       ),
     '_caffeineStorageUpdateGatewayPrincipals' : IDL.Func([], [], []),
     '_initializeAccessControlWithSecret' : IDL.Func([IDL.Text], [], []),
+    'adminGarbageCollectAttachments' : IDL.Func([IDL.Null], [], []),
     'assignCallerUserRole' : IDL.Func([IDL.Principal, UserRole], [], []),
     'assignProgramToKid' : IDL.Func([IDL.Text, IDL.Text], [], []),
     'clearKidContext' : IDL.Func([], [], []),
@@ -405,6 +460,8 @@ export const idlFactory = ({ IDL }) => {
     'createProgram' : IDL.Func([Program], [IDL.Text], []),
     'createScheduleEvent' : IDL.Func([ScheduleEvent], [IDL.Text], []),
     'deleteActivity' : IDL.Func([IDL.Text], [], []),
+    'deleteActivityAttachment' : IDL.Func([IDL.Text], [], []),
+    'deleteDocumentationAttachment' : IDL.Func([IDL.Text], [], []),
     'deleteDocumentationEntry' : IDL.Func([IDL.Nat], [], []),
     'deleteKidProfile' : IDL.Func([IDL.Text], [], []),
     'deleteOrphanage' : IDL.Func([IDL.Text], [], []),
@@ -414,11 +471,26 @@ export const idlFactory = ({ IDL }) => {
     'deleteScheduleEvent' : IDL.Func([IDL.Text], [], []),
     'getActiveKidContext' : IDL.Func([], [IDL.Opt(KidProfile)], ['query']),
     'getActivity' : IDL.Func([IDL.Text], [IDL.Opt(Activity)], ['query']),
+    'getActivityAttachmentFile' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
     'getCallerUserProfile' : IDL.Func([], [IDL.Opt(UserProfile)], ['query']),
     'getCallerUserRole' : IDL.Func([], [UserRole], ['query']),
+    'getDocumentationAttachmentFile' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
     'getKidProfile' : IDL.Func([IDL.Text], [IDL.Opt(KidProfile)], ['query']),
     'getOrphanage' : IDL.Func([IDL.Text], [IDL.Opt(Orphanage)], ['query']),
     'getProgram' : IDL.Func([IDL.Text], [IDL.Opt(Program)], ['query']),
+    'getProgramMediaAttachmentFile' : IDL.Func(
+        [IDL.Text],
+        [IDL.Opt(IDL.Vec(IDL.Nat8))],
+        ['query'],
+      ),
     'getProgramTimeline' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(TimelineEvent)],
@@ -436,6 +508,16 @@ export const idlFactory = ({ IDL }) => {
       ),
     'isCallerAdmin' : IDL.Func([], [IDL.Bool], ['query']),
     'listActivities' : IDL.Func([], [IDL.Vec(Activity)], ['query']),
+    'listActivityAttachments' : IDL.Func(
+        [IDL.Text],
+        [IDL.Vec(ActivityAttachment)],
+        ['query'],
+      ),
+    'listDocumentationAttachments' : IDL.Func(
+        [IDL.Nat],
+        [IDL.Vec(DocumentationAttachment)],
+        ['query'],
+      ),
     'listDocumentationEntries' : IDL.Func(
         [],
         [IDL.Vec(DocumentationEntry)],
@@ -446,7 +528,7 @@ export const idlFactory = ({ IDL }) => {
     'listPeople' : IDL.Func([], [IDL.Vec(Person)], ['query']),
     'listProgramMediaAttachments' : IDL.Func(
         [IDL.Text],
-        [IDL.Vec(ProgramMediaAttachment)],
+        [IDL.Vec(MediaAttachment)],
         ['query'],
       ),
     'listPrograms' : IDL.Func([], [IDL.Vec(Program)], ['query']),
@@ -468,6 +550,16 @@ export const idlFactory = ({ IDL }) => {
     'updatePerson' : IDL.Func([IDL.Nat, Person], [], []),
     'updateProgram' : IDL.Func([IDL.Text, Program], [], []),
     'updateScheduleEvent' : IDL.Func([IDL.Text, ScheduleEvent], [], []),
+    'uploadActivityAttachment' : IDL.Func(
+        [IDL.Text, MediaAttachmentUpload],
+        [IDL.Text],
+        [],
+      ),
+    'uploadDocumentationAttachment' : IDL.Func(
+        [IDL.Nat, IDL.Text, MediaAttachmentUpload],
+        [IDL.Text],
+        [],
+      ),
     'uploadProgramMediaAttachment' : IDL.Func(
         [MediaAttachmentUpload],
         [IDL.Text],

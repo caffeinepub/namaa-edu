@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateScheduleEvent } from '../../hooks/data/useScheduleEvents';
 import { ScheduleEvent } from '../../backend';
-import { toast } from 'sonner';
+import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES } from '../../utils/mutationFeedback';
+import { Loader2 } from 'lucide-react';
 
 interface ScheduleEventDialogProps {
   open: boolean;
@@ -27,6 +28,7 @@ export default function ScheduleEventDialog({
   const [startTime, setStartTime] = useState('09:00');
   const [endTime, setEndTime] = useState('10:00');
   const [location, setLocation] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const createEvent = useCreateScheduleEvent();
 
@@ -55,16 +57,20 @@ export default function ScheduleEventDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Guard against double-submit
+    if (isSubmitting) return;
+
     if (!title.trim()) {
-      toast.error('Please enter an event title');
+      showErrorToast(new Error('Validation'), 'Please enter an event title');
       return;
     }
 
     if (!date) {
-      toast.error('Please select a date');
+      showErrorToast(new Error('Validation'), 'Please select a date');
       return;
     }
 
+    setIsSubmitting(true);
     try {
       // Parse date and times
       const [year, month, day] = date.split('-').map(Number);
@@ -90,17 +96,16 @@ export default function ScheduleEventDialog({
       };
 
       await createEvent.mutateAsync(event);
-      toast.success('Event created successfully');
+      showSuccessToast(SUCCESS_MESSAGES.eventCreated);
       onOpenChange(false);
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to create event';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to create events');
-      } else {
-        toast.error(errorMessage);
-      }
+    } catch (error: unknown) {
+      showErrorToast(error, 'Failed to create event');
+    } finally {
+      setIsSubmitting(false);
     }
   };
+
+  const isPending = createEvent.isPending || isSubmitting;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -181,9 +186,10 @@ export default function ScheduleEventDialog({
           <Button
             type="submit"
             onClick={handleSubmit}
-            disabled={createEvent.isPending}
+            disabled={isPending}
           >
-            {createEvent.isPending ? 'Creating...' : 'Create Event'}
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isPending ? 'Creating...' : 'Create Event'}
           </Button>
         </DialogFooter>
       </DialogContent>

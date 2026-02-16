@@ -1,4 +1,4 @@
-import { Activity, Program } from '../../backend';
+import { Activity, Program, UserProfile } from '../../backend';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import SprintBoardCard from './SprintBoardCard';
@@ -7,6 +7,7 @@ interface SprintBoardColumnProps {
   title: string;
   activities: Activity[];
   programs: Program[];
+  profilesMap: Map<string, UserProfile | null> | undefined;
   isDetailed: boolean;
   onActivityClick: (activity: Activity) => void;
   onActivityMove?: (activity: Activity, newStatus: string) => void;
@@ -18,6 +19,7 @@ export default function SprintBoardColumn({
   title,
   activities,
   programs,
+  profilesMap,
   isDetailed,
   onActivityClick,
   onActivityMove,
@@ -80,22 +82,26 @@ export default function SprintBoardColumn({
               No activities
             </div>
           ) : (
-            activities.map((activity) => (
-              <div
-                key={activity.id}
-                draggable={isAuthenticated && !activity.id.startsWith('sample-')}
-                onDragStart={(e) => handleDragStart(e, activity)}
-                className={isAuthenticated && !activity.id.startsWith('sample-') ? 'cursor-move' : ''}
-              >
-                <SprintBoardCard
-                  activity={activity}
-                  program={getProgramForActivity(activity)}
-                  isDetailed={isDetailed}
-                  onClick={() => onActivityClick(activity)}
-                  isDraggable={isAuthenticated && !activity.id.startsWith('sample-')}
-                />
-              </div>
-            ))
+            activities.map((activity) => {
+              const ownerProfile = profilesMap?.get(activity.owner.toString());
+              return (
+                <div
+                  key={activity.id}
+                  draggable={isAuthenticated && !activity.id.startsWith('sample-')}
+                  onDragStart={(e) => handleDragStart(e, activity)}
+                  className={isAuthenticated && !activity.id.startsWith('sample-') ? 'cursor-move' : ''}
+                >
+                  <SprintBoardCard
+                    activity={activity}
+                    program={getProgramForActivity(activity)}
+                    ownerProfile={ownerProfile}
+                    isDetailed={isDetailed}
+                    onClick={() => onActivityClick(activity)}
+                    isDraggable={isAuthenticated && !activity.id.startsWith('sample-')}
+                  />
+                </div>
+              );
+            })
           )}
         </CardContent>
       </Card>

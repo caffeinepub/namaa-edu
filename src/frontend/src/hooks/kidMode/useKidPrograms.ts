@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useActor } from '../useActor';
-import { Program, ProgramMediaAttachment } from '../../backend';
+import { Program, MediaAttachment } from '../../backend';
 import { useGetActiveKidContext } from './useKidContext';
 
 export function useKidAssignedPrograms() {
@@ -22,7 +22,7 @@ export function useKidProgramAttachments(programId: string | undefined) {
   const { actor, isFetching: actorFetching } = useActor();
   const { data: activeKidContext } = useGetActiveKidContext();
 
-  return useQuery<ProgramMediaAttachment[]>({
+  return useQuery<MediaAttachment[]>({
     queryKey: ['kidProgramAttachments', programId, activeKidContext?.id],
     queryFn: async () => {
       if (!actor || !programId || !activeKidContext) return [];

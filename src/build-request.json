@@ -1,144 +1,37 @@
 {
   "kind": "build_request",
-  "title": "Phase 2.1: Dashboard focus block + ownership visibility + mine-only filter + trust signals + timeline wording + attachment guardrails (full attachment fix deferred)",
+  "title": "Add safe no-op backend module to unblock generator loop",
   "priority": "normal",
   "requirements": [
     {
       "id": "REQ-1",
-      "text": "Add a new “My focus today” section at the top of the internal dashboard landing experience by rendering it ABOVE the existing content on the Programs page (frontend/src/pages/programs/ProgramsPage.tsx), without removing or reordering the existing blocks below it.",
-      "target": "frontend",
+      "text": "Create a new Motoko source file in the backend (do not modify `backend/main.mo`) that is syntactically valid and contains a minimal, side-effect-free module (for example: a small `module { public let version : Text = \"noop\"; }`). The module must not be imported or referenced by the main actor and must not change runtime behavior or stable state.",
+      "target": "backend",
       "source": {
         "messageIds": [
-          "msg-user-latest"
+          "msg-18"
         ],
         "quotes": [
-          "1. C, full fix deferred\n2. B"
+          "Ok, execute."
         ]
       },
       "acceptanceCriteria": [
-        "Programs page renders a new top section titled “My focus today” above the current “Manage Programs” header/alert/search UI.",
-        "The existing Programs page content remains present and in the same order beneath the new section."
-      ]
-    },
-    {
-      "id": "REQ-2",
-      "text": "Populate “My focus today” with two read-only lists: (1) “My open activities” using existing activities data (frontend/src/hooks/data/useActivities.ts) filtered to activities owned by the current caller and not archived; and (2) “Upcoming events” using existing upcoming events query (frontend/src/hooks/data/useOperationalVisibility.ts). Keep this deploy UI-only (no backend changes).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred\n2. B"
-        ]
-      },
-      "acceptanceCriteria": [
-        "“My open activities” shows only activities where Activity.owner equals the current caller principal and Activity.isArchived is false.",
-        "“Upcoming events” renders a small list of the soonest events from useUpcomingEvents (no requirement to filter by participant since the model does not support it).",
-        "Both lists have clear empty states in English (e.g., “No open activities assigned to you” / “No upcoming events”)."
-      ]
-    },
-    {
-      "id": "REQ-3",
-      "text": "Make Activity ownership visible in Activities list cards (frontend/src/pages/activities/ActivitiesPage.tsx) and in Sprint Board activity cards (frontend/src/components/sprint/SprintBoardCard.tsx) by displaying an owner label derived from the Activity.owner principal and resolved profile name (reuse existing user profile lookup patterns from frontend/src/hooks/queries/useUserProfiles.ts).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Each activity card in ActivitiesPage includes an owner label (name when available; otherwise a safe fallback such as a shortened principal or “Unknown”).",
-        "Each sprint board card includes the same owner label behavior.",
-        "No backend schema/API changes are introduced."
-      ]
-    },
-    {
-      "id": "REQ-4",
-      "text": "Add a “Mine only” filter control to Activities page (frontend/src/pages/activities/ActivitiesPage.tsx) that, when enabled, filters the activity list to Activity.owner == current caller principal. The control must be in English and must not change global defaults.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred"
-        ]
-      },
-      "acceptanceCriteria": [
-        "ActivitiesPage includes a “Mine only” toggle/checkbox/button that clearly indicates on/off state.",
-        "When enabled, only activities owned by the current user are shown (in addition to existing search/status/orphanage filters).",
-        "When disabled, existing filtering behavior is unchanged."
-      ]
-    },
-    {
-      "id": "REQ-5",
-      "text": "Standardize trust signals for save/update flows by ensuring consistent disabled/loading states during mutations and showing explicit success toasts/messages for key flows that are part of Phase 2.1 (Activity create/update/status change, Documentation entry create/update). Reuse the existing toast pattern already used in pages/components (sonner).",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred"
-        ]
-      },
-      "acceptanceCriteria": [
-        "When a save/update mutation is pending, the primary action button is disabled and a visible loading indicator/state is shown.",
-        "On successful completion of Activity and Documentation mutations, a success toast is shown in English (e.g., “Activity updated”, “Documentation saved”).",
-        "On mutation failure, user-facing error toasts are shown in English and do not expose raw trap strings when avoidable."
-      ]
-    },
-    {
-      "id": "REQ-6",
-      "text": "Improve timeline readability on the Operational Visibility page (frontend/src/pages/visibility/OperationalVisibilityPage.tsx) by replacing the current mechanical eventType formatting with human-readable English labels for known event types, without adding new timeline event types or changing backend data.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Known timeline event types (e.g., ProgramCreated, ActivityUpdated, AttachmentUploaded, ScheduleEventCreated) display a clear English label (e.g., “Program created”, “Activity updated”, etc.).",
-        "Unknown event types continue to render in a safe fallback format (no crashes).",
-        "No backend changes are required for this improvement."
-      ]
-    },
-    {
-      "id": "REQ-7",
-      "text": "Add attachment download guardrails across UI surfaces that currently offer downloads while the attachment download/bytes plumbing is not implemented (full fix deferred). Where a download action would fail, hide/disable it and show a clear English message indicating downloads are not available yet.",
-      "target": "frontend",
-      "source": {
-        "messageIds": [
-          "msg-user-latest"
-        ],
-        "quotes": [
-          "1. C, full fix deferred"
-        ]
-      },
-      "acceptanceCriteria": [
-        "Any UI that currently presents a download action for program attachments (including image preview flows and kid-mode attachments) does not lead to a broken experience (no uncaught errors / no dead buttons).",
-        "If a download is attempted or visible, the UI communicates clearly in English that downloads are not available yet (e.g., “Download not available yet”).",
-        "No backend attachment byte storage or download APIs are added in this phase."
+        "A new file is added under the `backend/` directory containing a valid Motoko `module { ... }` (not an `actor`).",
+        "No changes are made to `backend/main.mo` (no new imports, no edits).",
+        "The project still builds successfully after adding the file.",
+        "There is no change to canister behavior, state, or exposed Candid interface as a result of this change."
       ]
     }
   ],
   "constraints": [
-    "Full attachment download/byte persistence fix is deferred; Phase 2.1 must not add backend attachment byte storage or download APIs.",
-    "“My focus today” must be additive and rendered above existing Programs page content (do not remove/reorder existing blocks).",
-    "Do not edit files under frontend/src/components/ui or any frontend immutable paths listed in SYSTEM_CONTEXT."
+    "Backend must remain a single-actor architecture (all canister logic stays in `backend/main.mo`).",
+    "Do not modify any frontend immutable paths listed in SYSTEM_CONTEXT.",
+    "Use English for any user-facing text."
   ],
   "nonGoals": [
-    "Implementing full attachment blob persistence and downloadable attachments end-to-end.",
-    "Adding schedule event participant/involvement modeling (the current ScheduleEvent model has no participants).",
-    "Changing backend schemas for activities, documentation, timeline, or schedule as part of Phase 2.1.",
-    "Fixing unrelated known issues (e.g., admin user listing, schedule timestamp unit mismatch) unless they are directly required to satisfy the Phase 2.1 UX requirements above."
+    "Implementing chunked upload/resumable upload backend APIs in this step.",
+    "Any changes to stable variables, storage maps, or data schemas.",
+    "Any frontend changes."
   ],
   "imageRequirements": {
     "required": [],

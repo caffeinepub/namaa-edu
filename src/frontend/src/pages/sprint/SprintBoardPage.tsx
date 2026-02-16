@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useActivities, useUpdateActivityStatus } from '../../hooks/data/useActivities';
 import { usePrograms } from '../../hooks/data/usePrograms';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useGetUserProfiles } from '../../hooks/queries/useUserProfiles';
 import { useSessionStorageState } from '../../hooks/useSessionStorageState';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -23,16 +24,26 @@ export default function SprintBoardPage() {
   const { identity } = useInternetIdentity();
   
   const [viewMode, setViewMode] = useSessionStorageState<ViewMode>('sprintBoardViewMode', 'simple');
+  const [mineOnlyFilter, setMineOnlyFilter] = useSessionStorageState<boolean>('mineOnlyFilter', false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const isAuthenticated = !!identity;
   const isLoading = activitiesLoading || programsLoading;
 
+  // Batch fetch owner profiles for all activities
+  const ownerPrincipals = activities.map(a => a.owner);
+  const { data: profilesMap } = useGetUserProfiles(ownerPrincipals);
+
   const columns = viewMode === 'simple' ? SIMPLE_COLUMNS : DETAILED_COLUMNS;
 
+  // Apply mine-only filter to all activities before distributing to columns
+  const filteredActivities = mineOnlyFilter && isAuthenticated
+    ? activities.filter(activity => activity.owner.toString() === identity?.getPrincipal().toString())
+    : activities;
+
   const getActivitiesForColumn = (columnStatuses: string[]) => {
-    return activities.filter(activity => columnStatuses.includes(activity.status));
+    return filteredActivities.filter(activity => columnStatuses.includes(activity.status));
   };
 
   const handleActivityClick = (activity: Activity) => {
@@ -90,6 +101,20 @@ export default function SprintBoardPage() {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-3 py-1 border rounded-md bg-background">
+            <Switch
+              id="mine-only-filter-board"
+              checked={mineOnlyFilter}
+              onCheckedChange={setMineOnlyFilter}
+              disabled={!isAuthenticated}
+            />
+            <Label 
+              htmlFor="mine-only-filter-board" 
+              className="text-sm font-normal cursor-pointer whitespace-nowrap"
+            >
+              Mine only
+            </Label>
+          </div>
           <div className="flex items-center gap-2">
             <LayoutGrid className="h-4 w-4 text-muted-foreground" />
             <Label htmlFor="view-mode" className="text-sm font-normal cursor-pointer">
@@ -121,6 +146,13 @@ export default function SprintBoardPage() {
             No activities found. Create activities from the Activities page to see them here.
           </AlertDescription>
         </Alert>
+      ) : filteredActivities.length === 0 && mineOnlyFilter ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            No activities owned by you. Turn off "Mine only" to see all activities.
+          </AlertDescription>
+        </Alert>
       ) : (
         <div className="flex-1 overflow-hidden">
           <div className={`grid gap-4 h-full ${viewMode === 'simple' ? 'grid-cols-3' : 'grid-cols-5'}`}>
@@ -130,6 +162,7 @@ export default function SprintBoardPage() {
                 title={column.label}
                 activities={getActivitiesForColumn(column.statuses)}
                 programs={programs}
+                profilesMap={profilesMap}
                 isDetailed={viewMode === 'detailed'}
                 onActivityClick={handleActivityClick}
                 onActivityMove={handleActivityMove}

@@ -2,18 +2,23 @@ import { useState } from 'react';
 import { useActivities, useCreateActivity, useArchiveActivity } from '../../hooks/data/useActivities';
 import { useOrphanages } from '../../hooks/data/useOrphanages';
 import { useInternetIdentity } from '../../hooks/useInternetIdentity';
+import { useGetUserProfiles } from '../../hooks/queries/useUserProfiles';
+import { useSessionStorageState } from '../../hooks/useSessionStorageState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Plus, Search, Archive, Calendar, MapPin, AlertCircle } from 'lucide-react';
 import ActivityDialog from '../../components/activities/ActivityDialog';
 import ArchiveConfirmDialog from '../../components/common/ArchiveConfirmDialog';
+import OwnerIndicator from '../../components/common/OwnerIndicator';
 import { Activity } from '../../backend';
 import { ALL_STATUS_OPTIONS, ACTIVITY_STATUS_COLORS } from '../../constants/activityStatuses';
-import { toast } from 'sonner';
+import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES } from '../../utils/mutationFeedback';
 
 export default function ActivitiesPage() {
   const { data: activities = [], isLoading } = useActivities();
@@ -25,22 +30,28 @@ export default function ActivitiesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [orphanageFilter, setOrphanageFilter] = useState<string>('all');
+  const [mineOnlyFilter, setMineOnlyFilter] = useSessionStorageState<boolean>('mineOnlyFilter', false);
   const [selectedActivity, setSelectedActivity] = useState<Activity | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [archiveTarget, setArchiveTarget] = useState<Activity | null>(null);
 
   const isAuthenticated = !!identity;
 
+  // Batch fetch owner profiles for all activities
+  const ownerPrincipals = activities.map(a => a.owner);
+  const { data: profilesMap } = useGetUserProfiles(ownerPrincipals);
+
   const filteredActivities = activities.filter((activity) => {
     const matchesSearch = activity.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || activity.status === statusFilter;
     const matchesOrphanage = orphanageFilter === 'all' || activity.orphanageId === orphanageFilter;
-    return matchesSearch && matchesStatus && matchesOrphanage;
+    const matchesOwner = !mineOnlyFilter || !isAuthenticated || activity.owner.toString() === identity?.getPrincipal().toString();
+    return matchesSearch && matchesStatus && matchesOrphanage && matchesOwner;
   });
 
   const handleCreate = () => {
     if (!isAuthenticated) {
-      toast.error('Please log in to create activities');
+      showErrorToast(new Error('Unauthorized'), 'Please log in to create activities');
       return;
     }
     setSelectedActivity(null);
@@ -53,21 +64,17 @@ export default function ActivitiesPage() {
   };
 
   const handleArchive = async () => {
-    if (!archiveTarget) return;
+    if (!archiveTarget || archiveActivity.isPending) return;
+    
     try {
       await archiveActivity.mutateAsync({
         activityId: archiveTarget.id,
         activity: archiveTarget,
       });
-      toast.success('Activity archived successfully');
+      showSuccessToast(SUCCESS_MESSAGES.activityArchived);
       setArchiveTarget(null);
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to archive activity';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to archive activities');
-      } else {
-        toast.error(errorMessage);
-      }
+    } catch (error: unknown) {
+      showErrorToast(error, 'Failed to archive activity');
       setArchiveTarget(null);
     }
   };
@@ -146,6 +153,20 @@ export default function ActivitiesPage() {
             ))}
           </SelectContent>
         </Select>
+        <div className="flex items-center gap-2 px-3 border rounded-md bg-background">
+          <Switch
+            id="mine-only-filter"
+            checked={mineOnlyFilter}
+            onCheckedChange={setMineOnlyFilter}
+            disabled={!isAuthenticated}
+          />
+          <Label 
+            htmlFor="mine-only-filter" 
+            className="text-sm font-normal cursor-pointer whitespace-nowrap"
+          >
+            Mine only
+          </Label>
+        </div>
       </div>
 
       {filteredActivities.length === 0 ? (
@@ -154,9 +175,9 @@ export default function ActivitiesPage() {
             <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
             <h3 className="mb-2 text-lg font-medium">No activities found</h3>
             <p className="mb-4 text-center text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' || orphanageFilter !== 'all' ? 'Try adjusting your filters' : 'Get started by creating your first activity'}
+              {searchQuery || statusFilter !== 'all' || orphanageFilter !== 'all' || mineOnlyFilter ? 'Try adjusting your filters' : 'Get started by creating your first activity'}
             </p>
-            {!searchQuery && statusFilter === 'all' && orphanageFilter === 'all' && isAuthenticated && (
+            {!searchQuery && statusFilter === 'all' && orphanageFilter === 'all' && !mineOnlyFilter && isAuthenticated && (
               <Button onClick={handleCreate}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create Activity
@@ -168,6 +189,8 @@ export default function ActivitiesPage() {
         <div className="space-y-3">
           {filteredActivities.map((activity) => {
             const orphanageName = getOrphanageName(activity.orphanageId);
+            const ownerProfile = profilesMap?.get(activity.owner.toString());
+            
             return (
               <Card key={activity.id} className="hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => handleView(activity)}>
                 <CardHeader className="pb-3">
@@ -187,6 +210,13 @@ export default function ActivitiesPage() {
                             {orphanageName}
                           </div>
                         )}
+                        <div className="pt-1">
+                          <OwnerIndicator 
+                            owner={activity.owner} 
+                            profile={ownerProfile}
+                            size="sm"
+                          />
+                        </div>
                       </CardDescription>
                     </div>
                     <div className="flex items-center gap-2">

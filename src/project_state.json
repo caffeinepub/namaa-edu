@@ -1,350 +1,48 @@
 {
   "schemaVersion": "1.0.0",
   "projectStateVersion": 3,
-  "summary": "Namaa.Edu is an Internet Computer (Motoko canister) + React internal operations dashboard for planning and tracking educational programs (for orphanages and related initiatives). It provides authenticated, role-gated access for the core team to manage Programs, Activities, Orphanage partners, People, and Documentation; visualize Activities on a sprint-style Kanban board; schedule program events on a calendar; and view an operational visibility page (upcoming events + per-program audit timeline). The system also includes an initial “Kid Mode” experience driven by kid profiles and an active kid-context, where a caretaker can switch into a kid’s context to view only assigned programs and their materials.",
-  "existing_features": [
-    {
-      "id": "IF-1",
-      "title": "Internet Identity authentication and session persistence",
-      "synonyms": [
-        "II login",
-        "AuthClient",
-        "delegation identity"
-      ],
-      "description": "Users authenticate via DFINITY Internet Identity using a React context/provider. Identity is loaded from storage on app start, supports login/logout, and creates an authenticated agent for canister calls.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-2",
-      "title": "Role-based access control with first-run admin assignment via secret token",
-      "synonyms": [
-        "access-control",
-        "admin token bootstrap",
-        "MixinAuthorization"
-      ],
-      "description": "Backend registers principals and assigns roles (#admin/#user/#guest). The first principal to initialize with the correct secret (matched against CAFFEINE_ADMIN_TOKEN env var) becomes admin; others become users. Admins can assign roles to other principals.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-3",
-      "title": "Frontend auth gating for internal dashboard vs guest access",
-      "synonyms": [
-        "AuthGate",
-        "role gate"
-      ],
-      "description": "UI blocks dashboard access when userRole is missing or guest, showing an Access Denied screen. Admin-only areas are wrapped with an AdminOnly component.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-4",
-      "title": "User profile management (current user) and first-time profile setup prompt",
-      "synonyms": [
-        "ProfileSetupDialog",
-        "UserProfile"
-      ],
-      "description": "Backend stores a per-principal user profile (name/role label). Frontend prompts authenticated users without a profile to set their display name, then displays profile initials/name in the header.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-5",
-      "title": "Dashboard shell with section navigation and admin-only menu item",
-      "synonyms": [
-        "DashboardLayout",
-        "SideNav",
-        "Header"
-      ],
-      "description": "Internal dashboard layout includes a left navigation (Programs, Activities, Orphanages, People, Documentation, Sprint Board, Visibility) and a header with section title and user dropdown. Admin section appears only for admins.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-6",
-      "title": "Programs management (list/search/create/update/archive via soft flag)",
-      "synonyms": [
-        "ProgramsPage",
-        "ProgramDialog"
-      ],
-      "description": "Users can view programs, search by name/description, create new programs, edit existing programs, and archive programs (sets isArchived=true). Program detail dialog captures rich program metadata fields.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-7",
-      "title": "Activities management with status workflow and archiving",
-      "synonyms": [
-        "ActivitiesPage",
-        "ActivityDialog",
-        "activity workflow"
-      ],
-      "description": "Users can create activities linked to a program and optional orphanage partner, update activity status, and archive activities (isArchived=true). Activities are also used for sprint board visualization.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-8",
-      "title": "Sprint/Kanban board for activities with drag-and-drop status changes and persisted view mode",
-      "synonyms": [
-        "SprintBoardPage",
-        "SprintBoardColumn",
-        "drag & drop",
-        "simple/detailed view"
-      ],
-      "description": "Kanban board shows activities across columns. Authenticated users can drag cards between columns to update status; guests and sample records are read-only. View mode (simple vs detailed columns) persists in sessionStorage.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-9",
-      "title": "Orphanage partner (\"Organizations\") management with detailed profile fields",
-      "synonyms": [
-        "Orphanages",
-        "OrganizationsPage",
-        "OrphanageDialog"
-      ],
-      "description": "Users can create, view/edit, and archive orphanage records (archiving via isActive=false). Orphanage data includes contacts, region/address, capacity/occupancy, needs/constraints, and internal notes.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-10",
-      "title": "People directory management (create/search/filter/archive)",
-      "synonyms": [
-        "PeoplePage",
-        "PersonDialog"
-      ],
-      "description": "Users can add people (volunteers/facilitators/builders/etc.), search and filter by role, view details, and archive people (isArchived=true and isActive=false).",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-11",
-      "title": "Documentation entries linked to activities with search/filter and archive",
-      "synonyms": [
-        "DocumentationPage",
-        "DocumentationEntryDialog"
-      ],
-      "description": "Users can create documentation entries tied to an activity, with author taken from current user profile and timestamp recorded from the client. Entries can be searched, filtered by activity, viewed, and archived.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-12",
-      "title": "Program schedule events with calendar UI and per-program event CRUD",
-      "synonyms": [
-        "ScheduleEvent",
-        "ProgramScheduleCalendar",
-        "ScheduleEventDialog"
-      ],
-      "description": "Programs can have schedule events created and archived. UI provides a monthly calendar view with event display and an upcoming list for the selected program; admin-only controls allow adding/removing events.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-13",
-      "title": "Operational visibility page (upcoming events overview + per-program audit timeline)",
-      "synonyms": [
-        "OperationalVisibilityPage",
-        "program timeline",
-        "upcoming window"
-      ],
-      "description": "Visibility section shows events in a time window (intended: next 7 days) and a program selector to view a timeline/audit log of recorded events for that program.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-14",
-      "title": "Audit/timeline event recording with actor principal attribution + migration support",
-      "synonyms": [
-        "TimelineEvent",
-        "recordTimelineEvent",
-        "migration.mo"
-      ],
-      "description": "Backend records timeline events for program/activity/schedule/document/attachment actions and stores them per program. TimelineEvent includes optional actorPrincipal. A migration transforms older timeline events to the new schema on upgrade.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-15",
-      "title": "Operational visibility error-toast deduplication",
-      "synonyms": [
-        "toast once per error occurrence",
-        "useEffect error tracking"
-      ],
-      "description": "OperationalVisibilityPage shows error toasts only when the query error state changes, preventing repeated toasts on every render.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-16",
-      "title": "Kid profiles + active kid context switching (backend) and kid-mode UI layout (frontend)",
-      "synonyms": [
-        "Kid Mode",
-        "KidProfile",
-        "activeKidContext"
-      ],
-      "description": "Backend supports creating kid profiles, listing caretaker’s kid profiles, selecting/clearing an active kid context, and assigning programs to kids. Frontend provides a kid profile selector and a separate kid-friendly layout that appears when an active kid context is set.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-17",
-      "title": "Kid-mode assigned programs view with backend-filtered program list",
-      "synonyms": [
-        "AssignedProgramsPage",
-        "useKidAssignedPrograms"
-      ],
-      "description": "When in kid context, listPrograms returns only the kid’s assigned programs; UI displays those programs and navigates to materials.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-18",
-      "title": "Program media attachment metadata management (list/upload/delete) with image/document categorization",
-      "synonyms": [
-        "ProgramMediaAttachment",
-        "useProgramAttachments",
-        "documents/images tabs"
-      ],
-      "description": "Backend exposes APIs to list and upload attachment metadata for a program and delete attachments. Frontend provides hooks and a Program dialog UI to upload/list documents and images (admin-only uploads), and to remove attachments (admin-only).",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-19",
-      "title": "Sample-data fallback for programs/activities/orphanages with read-only restrictions",
-      "synonyms": [
-        "sampleData",
-        "seed content"
-      ],
-      "description": "Frontend uses built-in sample Programs/Activities/Orphanages when backend returns no active records. Sample items are clearly labeled and mutation actions are disabled for them.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "IF-20",
-      "title": "Reusable archive confirmation dialog pattern across entities",
-      "synonyms": [
-        "ArchiveConfirmDialog",
-        "soft delete UX"
-      ],
-      "description": "A shared confirmation dialog component is used for archiving Programs, Activities, Orphanages, People, and Documentation entries with pending/disabled states.",
-      "reqIds": [],
-      "version": 1
-    },
-    {
-      "id": "feature-add-a-new-my-focus-today-section-at-the-top-of-the-internal-dashboard-landing-experience-by-rendering-it-above-the-existing-content-on-the-programs-page-frontend-src-pages-programs-programspage-tsx-without-removing-or-reordering-the-existing-blocks-below-it",
-      "title": "Add a new “My focus today” section at the top of the internal dashboard landing experience by rendering it ABOVE the existing content on the Programs page (frontend/src/pages/programs/ProgramsPage.tsx), without removing or reordering the existing blocks below it.",
-      "reqIds": [
-        "REQ-1"
-      ],
-      "version": 1
-    },
-    {
-      "id": "feature-populate-my-focus-today-with-two-read-only-lists-1-my-open-activities-using-existing-activities-data-frontend-src-hooks-data-useactivities-ts-filtered-to-activities-owned-by-the-current-caller-and-not-archived-and-2-upcoming-events-using-existing-upcoming-events-query-frontend-src-hooks-data-useoperationalvisibility-ts-keep-this-deploy-ui-only-no-backend-changes",
-      "title": "Populate “My focus today” with two read-only lists: (1) “My open activities” using existing activities data (frontend/src/hooks/data/useActivities.ts) filtered to activities owned by the current caller and not archived; and (2) “Upcoming events” using existing upcoming events query (frontend/src/hooks/data/useOperationalVisibility.ts). Keep this deploy UI-only (no backend changes).",
-      "reqIds": [
-        "REQ-2"
-      ],
-      "version": 1
-    }
+  "summary": "Fix large file upload failures on an Internet Computer (Motoko) app by implementing a resumable chunked-upload system (backend first, then frontend), standardizing on 500KB chunks, and updating assistant interaction to always provide pros/cons plus a recommendation when presenting options.",
+  "architectural_notes": [
+    "Current backend uses one-shot upload (single Blob argument), which hits IC message/ingress size limits for large files; requires a chunked-upload API.",
+    "Chunk size decision: standardize backend chunk size at 500KB.",
+    "Chunked uploads should be resumable (allow retrying missing chunks / resuming sessions).",
+    "Adopt incremental delivery due to build/generator complexity limits: implement backend first, then frontend; potentially add endpoints/types in small steps."
   ],
+  "known_issues": [
+    "Platform/build generator repeatedly fails (internal loop/complexity limit), preventing even small backend changes from being generated/deployed; blocks progress on chunked-upload implementation.",
+    "Large file uploads currently fail due to one-shot backend upload approach and IC argument size limits."
+  ],
+  "isFixRequest": true,
+  "existing_features": [],
   "new_feature_requests": [
     {
       "id": "AR-1",
-      "summary": "Add first-class external attachment links (Google Drive/OneNote/etc.) alongside uploads for Programs/Documentation, with links-first UX and soft access warnings (no preview/sync initially).",
+      "summary": "Implement backend chunked-upload API for media attachments using 500KB chunks, supporting resumable uploads (multi-step approach: backend first).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-2",
-      "summary": "Refine Activity workflow model: add Draft + Halted/Set Aside statuses (distinct from Archived), default Activity owner=creator, and update Kanban columns to Planned → In Progress → Completed with optional detailed POV.",
+      "summary": "Implement matching frontend chunked-upload logic to use the new backend chunked-upload endpoints (after backend is in place).",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-3",
-      "summary": "Sprint/Kanban board refinements: default view 'My activities' (owner=me), toggle to show all non-archived, and grouping views by Program and by Person in charge.",
+      "summary": "When asking the user to choose between options, always provide pros/cons for each and a recommended best choice.",
       "reqIds": [],
       "status": "pending"
     },
     {
       "id": "AR-4",
-      "summary": "Phase 2.1 internal workflow enhancements: add 'My focus today' dashboard section, consistent ownership display, 'mine only' filter, stronger save/confirmation UX, clearer human-readable timeline wording, and attachment guardrails (defer full download/blob fix).",
-      "reqIds": [],
-      "status": "pending"
-    },
-    {
-      "id": "AR-7",
-      "summary": "Make Activity ownership visible in Activities list cards (frontend/src/pages/activities/ActivitiesPage.tsx) and in Sprint Board activity cards (frontend/src/components/sprint/SprintBoardCard.tsx) by displaying an owner label derived from the Activity.owner principal and resolved profile name (reuse existing user profile lookup patterns from frontend/src/hooks/queries/useUserProfiles.ts).",
+      "summary": "Create a new Motoko source file in the backend (do not modify `backend/main.mo`) that is syntactically valid and contains a minimal, side-effect-free module (for example: a small `module { public let version : Text = \"noop\"; }`). The module must not be imported or referenced by the main actor and must not change runtime behavior or stable state.",
       "reqIds": [
-        "REQ-3"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-8",
-      "summary": "Add a “Mine only” filter control to Activities page (frontend/src/pages/activities/ActivitiesPage.tsx) that, when enabled, filters the activity list to Activity.owner == current caller principal. The control must be in English and must not change global defaults.",
-      "reqIds": [
-        "REQ-4"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-9",
-      "summary": "Standardize trust signals for save/update flows by ensuring consistent disabled/loading states during mutations and showing explicit success toasts/messages for key flows that are part of Phase 2.1 (Activity create/update/status change, Documentation entry create/update). Reuse the existing toast pattern already used in pages/components (sonner).",
-      "reqIds": [
-        "REQ-5"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-10",
-      "summary": "Improve timeline readability on the Operational Visibility page (frontend/src/pages/visibility/OperationalVisibilityPage.tsx) by replacing the current mechanical eventType formatting with human-readable English labels for known event types, without adding new timeline event types or changing backend data.",
-      "reqIds": [
-        "REQ-6"
-      ],
-      "status": "pending"
-    },
-    {
-      "id": "AR-11",
-      "summary": "Add attachment download guardrails across UI surfaces that currently offer downloads while the attachment download/bytes plumbing is not implemented (full fix deferred). Where a download action would fail, hide/disable it and show a clear English message indicating downloads are not available yet.",
-      "reqIds": [
-        "REQ-7"
+        "REQ-1"
       ],
       "status": "pending"
     }
   ],
-  "architectural_notes": [
-    "Backend is a single Motoko canister using in-memory persistent Maps for each entity (programs, activities, orphanages, people, documentation, schedule events, timeline events, kid profiles, etc.).",
-    "Authorization is implemented as a reusable Motoko module/mixin (authorization/MixinAuthorization.mo + access-control.mo). First-run admin assignment is gated by an environment token; roles are stored per Principal.",
-    "Actor initialization is handled client-side in a single React hook (useActor) which creates an authenticated actor when II identity exists, then calls a canister init method to register/assign a role.",
-    "Frontend data layer is built on @tanstack/react-query with query invalidation after mutations to keep lists, timelines, and derived pages in sync.",
-    "UI is organized as a dashboard shell (SideNav + Header + section pages) using shadcn/ui components and Tailwind theming; dialogs are used for create/view flows.",
-    "Kid Mode is implemented as an alternate layout and navigation, driven by an “active kid context” stored in the canister per caller Principal; when active, backend filters listPrograms and blocks internal ops APIs.",
-    "Operational auditability is implemented via a Program timeline (timelineEvents map keyed by programId) with events recorded on create/update/delete for multiple entities; a migration module upgrades timeline schema across canister upgrades.",
-    "A migration hook is wired into the actor via `(with migration = Migration.run)` to transform stable state on upgrade (specifically timeline event schema changes).",
-    "Sample/seed data exists only on the frontend as a fallback when backend lists are empty; sample records are treated as read-only in UI (no mutation allowed).",
-    "URL-hash secret handling exists for sensitive parameters (e.g., caffeineAdminToken) with sessionStorage persistence and automatic removal from the address bar.",
-    "Decision: support mixed attachment types (uploaded files + external links like Google Drive/OneNote). Store URL + label; optionally lightweight metadata later; show soft warning about sharing/accessibility without attempting to verify permissions via external providers.",
-    "Decision: treat 'Halted/Set Aside' as a resumable paused status distinct from 'Archived' (archived = hidden from default views but still retained)."
-  ],
-  "known_issues": [
-    "Program attachment download and byte retrieval are not implemented: frontend hooks (useDownloadProgramAttachment/useGetAttachmentBytes) always throw, which breaks image thumbnail loading/preview flows and kid-mode downloads.",
-    "Backend uploadProgramMediaAttachment currently stores only attachment metadata; file bytes are never persisted, and uploadedAt is set to 0 (not current time). Blob-storage mixin exists but is not integrated into attachment persistence.",
-    "Admin user listing is not implemented: frontend useGetAllUsers returns an empty list and the admin UI shows a warning; backend lacks a getAllUsers/listUsers API.",
-    "ScheduleEvent timestamp unit mismatch likely breaks upcoming events: UI creates start/end timestamps in nanoseconds (ms * 1,000,000), but backend getUpcomingEventsInWindow compares against a seconds-based ‘now’ and window, causing filtering to exclude events.",
-    "People and Documentation creation likely produces unusable IDs in stored records: frontend sends id=0 and idText=\"\"; backend createPerson/createDocumentationEntry store the provided record without generating/filling id/idText fields, leading to duplicates/blank identifiers in UI keys and later updates.",
-    "Environment variable typo risk in blob storage module: Storage.getCashierPrincipal reads \"CAFFFEINE_STORAGE_CASHIER_PRINCIPAL\" (extra ‘F’), which may not match intended deployment configuration.",
-    "Access control initialization hard-traps if CAFFEINE_ADMIN_TOKEN is not set in the canister environment, preventing authenticated app usage.",
-    "The dashboard’s status model currently supports Backlog/Planning/Scheduled/In Progress/Completed only (no Draft/Halted states), despite some prior planning implied elsewhere."
-  ],
-  "isFixRequest": false,
-  "gameProjectType": "none",
-  "projectName": "Namaa.Edu",
+  "projectName": "Add safe no-op backend module to unblock generator loop",
   "clarification_mode": "instant",
   "clarification_rounds": 0
 }

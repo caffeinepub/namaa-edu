@@ -1,47 +1,4 @@
 {
   "kind": "feature_evidence_report",
-  "features": [
-    {
-      "featureId": "feature-add-a-new-my-focus-today-section-at-the-top-of-the-internal-dashboard-landing-experience-by-rendering-it-above-the-existing-content-on-the-programs-page-frontend-src-pages-programs-programspage-tsx-without-removing-or-reordering-the-existing-blocks-below-it",
-      "featureTitle": "Add a new “My focus today” section at the top of the internal dashboard landing experience by rendering it ABOVE the existing content on the Programs page (frontend/src/pages/programs/ProgramsPage.tsx), without removing or reordering the existing blocks below it.",
-      "files": [
-        "frontend/src/components/programs/MyFocusTodaySection.tsx",
-        "frontend/src/pages/programs/ProgramsPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-1"
-      ],
-      "confidence": "high"
-    },
-    {
-      "featureId": "feature-populate-my-focus-today-with-two-read-only-lists-1-my-open-activities-using-existing-activities-data-frontend-src-hooks-data-useactivities-ts-filtered-to-activities-owned-by-the-current-caller-and-not-archived-and-2-upcoming-events-using-existing-upcoming-events-query-frontend-src-hooks-data-useoperationalvisibility-ts-keep-this-deploy-ui-only-no-backend-changes",
-      "featureTitle": "Populate “My focus today” with two read-only lists: (1) “My open activities” using existing activities data (frontend/src/hooks/data/useActivities.ts) filtered to activities owned by the current caller and not archived; and (2) “Upcoming events” using existing upcoming events query (frontend/src/hooks/data/useOperationalVisibility.ts). Keep this deploy UI-only (no backend changes).",
-      "files": [
-        "frontend/src/components/programs/MyFocusTodaySection.tsx",
-        "frontend/src/pages/programs/ProgramsPage.tsx"
-      ],
-      "components": [
-        "authorization@4.0.0",
-        "core-infrastructure@1.0.2",
-        "shadcn-ui@1.0.0",
-        "build-template-react@1.0.0",
-        "initial-app@1.0.0",
-        "github-export-icp-cli@1.0.0",
-        "blob-storage@4.0.0"
-      ],
-      "testIds": [
-        "REQ-2"
-      ],
-      "confidence": "high"
-    }
-  ]
+  "features": []
 }

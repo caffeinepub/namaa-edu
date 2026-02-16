@@ -13,8 +13,7 @@ export interface MediaAttachmentUpload {
     byteSize: bigint;
     isImage: boolean;
     filename: string;
-    fileBytes: Uint8Array;
-    programId: string;
+    fileBytes?: Uint8Array;
 }
 export interface Orphanage {
     id: string;
@@ -40,6 +39,16 @@ export interface ScheduleEvent {
     startTimestamp: bigint;
     programId: string;
     location?: string;
+}
+export interface MediaAttachment {
+    id: string;
+    contentType: string;
+    byteSize: bigint;
+    isImage: boolean;
+    isArchived: boolean;
+    filename: string;
+    uploadedAt: bigint;
+    uploadedBy: Principal;
 }
 export interface TimelineEvent {
     id: bigint;
@@ -69,6 +78,11 @@ export interface DocumentationEntry {
     timestamp: bigint;
     idText: string;
 }
+export interface ActivityAttachment {
+    metadata: MediaAttachment;
+    activityId: string;
+    programId: string;
+}
 export interface Activity {
     id: string;
     status: string;
@@ -92,6 +106,11 @@ export interface Program {
     objectives: string;
     sponsors: string;
 }
+export interface DocumentationAttachment {
+    metadata: MediaAttachment;
+    documentationId: bigint;
+    programId: string;
+}
 export interface Person {
     id: bigint;
     contact: string;
@@ -100,17 +119,6 @@ export interface Person {
     isArchived: boolean;
     isActive: boolean;
     idText: string;
-}
-export interface ProgramMediaAttachment {
-    id: string;
-    contentType: string;
-    byteSize: bigint;
-    isImage: boolean;
-    isArchived: boolean;
-    filename: string;
-    programId: string;
-    uploadedAt: bigint;
-    uploadedBy: Principal;
 }
 export interface UserProfile {
     name: string;
@@ -122,6 +130,7 @@ export enum UserRole {
     guest = "guest"
 }
 export interface backendInterface {
+    adminGarbageCollectAttachments(arg0: null): Promise<void>;
     assignCallerUserRole(user: Principal, role: UserRole): Promise<void>;
     assignProgramToKid(kidId: string, programId: string): Promise<void>;
     clearKidContext(): Promise<void>;
@@ -133,6 +142,8 @@ export interface backendInterface {
     createProgram(program: Program): Promise<string>;
     createScheduleEvent(event: ScheduleEvent): Promise<string>;
     deleteActivity(id: string): Promise<void>;
+    deleteActivityAttachment(id: string): Promise<void>;
+    deleteDocumentationAttachment(id: string): Promise<void>;
     deleteDocumentationEntry(id: bigint): Promise<void>;
     deleteKidProfile(id: string): Promise<void>;
     deleteOrphanage(id: string): Promise<void>;
@@ -142,21 +153,26 @@ export interface backendInterface {
     deleteScheduleEvent(id: string): Promise<void>;
     getActiveKidContext(): Promise<KidProfile | null>;
     getActivity(id: string): Promise<Activity | null>;
+    getActivityAttachmentFile(attachmentId: string): Promise<Uint8Array | null>;
     getCallerUserProfile(): Promise<UserProfile | null>;
     getCallerUserRole(): Promise<UserRole>;
+    getDocumentationAttachmentFile(attachmentId: string): Promise<Uint8Array | null>;
     getKidProfile(id: string): Promise<KidProfile | null>;
     getOrphanage(id: string): Promise<Orphanage | null>;
     getProgram(id: string): Promise<Program | null>;
+    getProgramMediaAttachmentFile(attachmentId: string): Promise<Uint8Array | null>;
     getProgramTimeline(programId: string): Promise<Array<TimelineEvent>>;
     getUpcomingEventsInWindow(timeWindow: bigint | null): Promise<Array<ScheduleEvent>>;
     getUserProfile(user: Principal): Promise<UserProfile | null>;
     isCallerAdmin(): Promise<boolean>;
     listActivities(): Promise<Array<Activity>>;
+    listActivityAttachments(activityId: string): Promise<Array<ActivityAttachment>>;
+    listDocumentationAttachments(documentationId: bigint): Promise<Array<DocumentationAttachment>>;
     listDocumentationEntries(): Promise<Array<DocumentationEntry>>;
     listMyKidProfiles(): Promise<Array<KidProfile>>;
     listOrphanages(): Promise<Array<Orphanage>>;
     listPeople(): Promise<Array<Person>>;
-    listProgramMediaAttachments(programId: string): Promise<Array<ProgramMediaAttachment>>;
+    listProgramMediaAttachments(programId: string): Promise<Array<MediaAttachment>>;
     listPrograms(): Promise<Array<Program>>;
     listScheduleEvents(programId: string): Promise<Array<ScheduleEvent>>;
     removeProgramFromKid(kidId: string, programId: string): Promise<void>;
@@ -168,5 +184,7 @@ export interface backendInterface {
     updatePerson(id: bigint, person: Person): Promise<void>;
     updateProgram(id: string, program: Program): Promise<void>;
     updateScheduleEvent(id: string, event: ScheduleEvent): Promise<void>;
+    uploadActivityAttachment(activityId: string, upload: MediaAttachmentUpload): Promise<string>;
+    uploadDocumentationAttachment(documentationId: bigint, programId: string, upload: MediaAttachmentUpload): Promise<string>;
     uploadProgramMediaAttachment(upload: MediaAttachmentUpload): Promise<string>;
 }

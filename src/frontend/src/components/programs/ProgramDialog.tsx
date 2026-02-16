@@ -23,6 +23,7 @@ import { toast } from 'sonner';
 import { Upload, Download, Trash2, FileText, AlertCircle, Info, Image as ImageIcon, Eye } from 'lucide-react';
 import ProgramImagePreviewDialog from './ProgramImagePreviewDialog';
 import ProgramScheduleCalendar from './ProgramScheduleCalendar';
+import { humanizeError } from '../../utils/mutationFeedback';
 
 interface ProgramDialogProps {
   open: boolean;
@@ -104,27 +105,35 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
 
   // Load image thumbnails
   useEffect(() => {
-    if (images.length > 0) {
-      images.forEach(async (image) => {
+    if (!open || images.length === 0) return;
+
+    const loadThumbnails = async () => {
+      for (const image of images) {
         if (!imageThumbnails.has(image.id)) {
           try {
             const bytes = await getAttachmentBytes.mutateAsync(image.id);
-            // Convert to standard Uint8Array to ensure compatibility
-            const standardBytes = new Uint8Array(bytes);
-            const blob = new Blob([standardBytes], { type: image.contentType });
+            // Convert to plain array to avoid SharedArrayBuffer type issues
+            const byteArray = Array.from(bytes);
+            const blob = new Blob([new Uint8Array(byteArray)], { type: image.contentType });
             const url = URL.createObjectURL(blob);
             setImageThumbnails((prev) => new Map(prev).set(image.id, url));
           } catch (error) {
-            console.error('Failed to load thumbnail:', error);
+            console.error(`Failed to load thumbnail for ${image.filename}:`, error);
           }
         }
-      });
-    }
-
-    return () => {
-      imageThumbnails.forEach((url) => URL.revokeObjectURL(url));
+      }
     };
-  }, [images]);
+
+    loadThumbnails();
+
+    // Cleanup function to revoke URLs when dialog closes or images change
+    return () => {
+      if (!open) {
+        imageThumbnails.forEach((url) => URL.revokeObjectURL(url));
+        setImageThumbnails(new Map());
+      }
+    };
+  }, [images, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,12 +168,7 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
       }
       onOpenChange(false);
     } catch (error: any) {
-      const errorMessage = error?.message || (isEditing ? 'Failed to update program' : 'Failed to create program');
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to perform this action');
-      } else {
-        toast.error(errorMessage);
-      }
+      toast.error(humanizeError(error));
     }
   };
 
@@ -207,19 +211,14 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
     }
 
     try {
-      await uploadAttachment.mutateAsync({ file: selectedDocumentFile, programId: program.id, isImage: false });
+      await uploadAttachment.mutateAsync({ file: selectedDocumentFile, isImage: false });
       toast.success('Document uploaded successfully');
       setSelectedDocumentFile(null);
       if (documentFileInputRef.current) {
         documentFileInputRef.current.value = '';
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to upload document';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to upload documents');
-      } else {
-        toast.error(errorMessage);
-      }
+      toast.error(humanizeError(error));
     }
   };
 
@@ -240,19 +239,14 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
     }
 
     try {
-      await uploadAttachment.mutateAsync({ file: selectedImageFile, programId: program.id, isImage: true });
+      await uploadAttachment.mutateAsync({ file: selectedImageFile, isImage: true });
       toast.success('Image uploaded successfully');
       setSelectedImageFile(null);
       if (imageFileInputRef.current) {
         imageFileInputRef.current.value = '';
       }
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to upload image';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('You do not have permission to upload images');
-      } else {
-        toast.error(errorMessage);
-      }
+      toast.error(humanizeError(error));
     }
   };
 
@@ -261,8 +255,7 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
       await downloadAttachment.mutateAsync({ attachmentId, filename });
       toast.success('Download started');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to download file';
-      toast.error(errorMessage);
+      toast.error(humanizeError(error));
     }
   };
 
@@ -273,6 +266,8 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
         setPreviewImageUrl(url);
         setPreviewImageFilename(filename);
         setShowImagePreview(true);
+      } else {
+        toast.error('Image preview not available');
       }
     } catch (error: any) {
       toast.error('Failed to preview image');
@@ -286,12 +281,7 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
       await archiveAttachment.mutateAsync({ attachmentId, programId: program.id });
       toast.success('File removed successfully');
     } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to remove file';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('Only administrators can remove files');
-      } else {
-        toast.error(errorMessage);
-      }
+      toast.error(humanizeError(error));
     }
   };
 
@@ -304,7 +294,7 @@ export default function ProgramDialog({ open, onOpenChange, program }: ProgramDi
 
   const formatDate = (timestamp: bigint): string => {
     if (timestamp === BigInt(0)) return 'Just now';
-    const date = new Date(Number(timestamp) / 1000000);
+    const date = new Date(Number(timestamp) * 1000);
     return date.toLocaleDateString();
   };
 

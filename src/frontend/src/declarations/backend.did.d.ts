@@ -19,6 +19,16 @@ export interface Activity {
   'programId' : string,
   'orphanageId' : [] | [string],
 }
+export interface ActivityAttachment {
+  'metadata' : MediaAttachment,
+  'activityId' : string,
+  'programId' : string,
+}
+export interface DocumentationAttachment {
+  'metadata' : MediaAttachment,
+  'documentationId' : bigint,
+  'programId' : string,
+}
 export interface DocumentationEntry {
   'id' : bigint,
   'content' : string,
@@ -38,14 +48,23 @@ export interface KidProfile {
   'lastName' : string,
   'firstName' : string,
 }
+export interface MediaAttachment {
+  'id' : string,
+  'contentType' : string,
+  'byteSize' : bigint,
+  'isImage' : boolean,
+  'isArchived' : boolean,
+  'filename' : string,
+  'uploadedAt' : bigint,
+  'uploadedBy' : Principal,
+}
 export interface MediaAttachmentUpload {
   'id' : string,
   'contentType' : string,
   'byteSize' : bigint,
   'isImage' : boolean,
   'filename' : string,
-  'fileBytes' : Uint8Array,
-  'programId' : string,
+  'fileBytes' : [] | [Uint8Array],
 }
 export interface Orphanage {
   'id' : string,
@@ -84,17 +103,6 @@ export interface Program {
   'targetParticipants' : string,
   'objectives' : string,
   'sponsors' : string,
-}
-export interface ProgramMediaAttachment {
-  'id' : string,
-  'contentType' : string,
-  'byteSize' : bigint,
-  'isImage' : boolean,
-  'isArchived' : boolean,
-  'filename' : string,
-  'programId' : string,
-  'uploadedAt' : bigint,
-  'uploadedBy' : Principal,
 }
 export interface ScheduleEvent {
   'id' : string,
@@ -147,6 +155,7 @@ export interface _SERVICE {
   >,
   '_caffeineStorageUpdateGatewayPrincipals' : ActorMethod<[], undefined>,
   '_initializeAccessControlWithSecret' : ActorMethod<[string], undefined>,
+  'adminGarbageCollectAttachments' : ActorMethod<[null], undefined>,
   'assignCallerUserRole' : ActorMethod<[Principal, UserRole], undefined>,
   'assignProgramToKid' : ActorMethod<[string, string], undefined>,
   'clearKidContext' : ActorMethod<[], undefined>,
@@ -158,6 +167,8 @@ export interface _SERVICE {
   'createProgram' : ActorMethod<[Program], string>,
   'createScheduleEvent' : ActorMethod<[ScheduleEvent], string>,
   'deleteActivity' : ActorMethod<[string], undefined>,
+  'deleteActivityAttachment' : ActorMethod<[string], undefined>,
+  'deleteDocumentationAttachment' : ActorMethod<[string], undefined>,
   'deleteDocumentationEntry' : ActorMethod<[bigint], undefined>,
   'deleteKidProfile' : ActorMethod<[string], undefined>,
   'deleteOrphanage' : ActorMethod<[string], undefined>,
@@ -167,11 +178,14 @@ export interface _SERVICE {
   'deleteScheduleEvent' : ActorMethod<[string], undefined>,
   'getActiveKidContext' : ActorMethod<[], [] | [KidProfile]>,
   'getActivity' : ActorMethod<[string], [] | [Activity]>,
+  'getActivityAttachmentFile' : ActorMethod<[string], [] | [Uint8Array]>,
   'getCallerUserProfile' : ActorMethod<[], [] | [UserProfile]>,
   'getCallerUserRole' : ActorMethod<[], UserRole>,
+  'getDocumentationAttachmentFile' : ActorMethod<[string], [] | [Uint8Array]>,
   'getKidProfile' : ActorMethod<[string], [] | [KidProfile]>,
   'getOrphanage' : ActorMethod<[string], [] | [Orphanage]>,
   'getProgram' : ActorMethod<[string], [] | [Program]>,
+  'getProgramMediaAttachmentFile' : ActorMethod<[string], [] | [Uint8Array]>,
   'getProgramTimeline' : ActorMethod<[string], Array<TimelineEvent>>,
   'getUpcomingEventsInWindow' : ActorMethod<
     [[] | [bigint]],
@@ -180,14 +194,16 @@ export interface _SERVICE {
   'getUserProfile' : ActorMethod<[Principal], [] | [UserProfile]>,
   'isCallerAdmin' : ActorMethod<[], boolean>,
   'listActivities' : ActorMethod<[], Array<Activity>>,
+  'listActivityAttachments' : ActorMethod<[string], Array<ActivityAttachment>>,
+  'listDocumentationAttachments' : ActorMethod<
+    [bigint],
+    Array<DocumentationAttachment>
+  >,
   'listDocumentationEntries' : ActorMethod<[], Array<DocumentationEntry>>,
   'listMyKidProfiles' : ActorMethod<[], Array<KidProfile>>,
   'listOrphanages' : ActorMethod<[], Array<Orphanage>>,
   'listPeople' : ActorMethod<[], Array<Person>>,
-  'listProgramMediaAttachments' : ActorMethod<
-    [string],
-    Array<ProgramMediaAttachment>
-  >,
+  'listProgramMediaAttachments' : ActorMethod<[string], Array<MediaAttachment>>,
   'listPrograms' : ActorMethod<[], Array<Program>>,
   'listScheduleEvents' : ActorMethod<[string], Array<ScheduleEvent>>,
   'removeProgramFromKid' : ActorMethod<[string, string], undefined>,
@@ -202,6 +218,14 @@ export interface _SERVICE {
   'updatePerson' : ActorMethod<[bigint, Person], undefined>,
   'updateProgram' : ActorMethod<[string, Program], undefined>,
   'updateScheduleEvent' : ActorMethod<[string, ScheduleEvent], undefined>,
+  'uploadActivityAttachment' : ActorMethod<
+    [string, MediaAttachmentUpload],
+    string
+  >,
+  'uploadDocumentationAttachment' : ActorMethod<
+    [bigint, string, MediaAttachmentUpload],
+    string
+  >,
   'uploadProgramMediaAttachment' : ActorMethod<[MediaAttachmentUpload], string>,
 }
 export declare const idlService: IDL.ServiceClass;

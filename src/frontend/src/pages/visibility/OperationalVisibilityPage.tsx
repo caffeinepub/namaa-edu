@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePrograms } from '../../hooks/data/usePrograms';
 import { useProgramTimeline, useUpcomingEvents } from '../../hooks/data/useOperationalVisibility';
-import { useGetUserProfiles, getActorDisplayName } from '../../hooks/queries/useUserProfiles';
+import { useGetUserProfiles } from '../../hooks/queries/useUserProfiles';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, MapPin, Activity } from 'lucide-react';
-import { toast } from 'sonner';
+import { showErrorToast } from '../../utils/mutationFeedback';
+import { humanizeTimelineEvent } from '../../utils/timelineEventFormatter';
 
 export default function OperationalVisibilityPage() {
   const [selectedProgramId, setSelectedProgramId] = useState<string | undefined>(undefined);
@@ -29,9 +30,7 @@ export default function OperationalVisibilityPage() {
       const errorMessage = upcomingError instanceof Error ? upcomingError.message : 'Unknown error';
       if (lastUpcomingErrorRef.current !== errorMessage) {
         lastUpcomingErrorRef.current = errorMessage;
-        toast.error('Failed to load upcoming events', {
-          description: errorMessage,
-        });
+        showErrorToast(upcomingError, 'Failed to load upcoming events');
       }
     } else {
       // Clear tracker when error is resolved
@@ -44,9 +43,7 @@ export default function OperationalVisibilityPage() {
       const errorMessage = timelineError instanceof Error ? timelineError.message : 'Unknown error';
       if (lastTimelineErrorRef.current !== errorMessage) {
         lastTimelineErrorRef.current = errorMessage;
-        toast.error('Failed to load program timeline', {
-          description: errorMessage,
-        });
+        showErrorToast(timelineError, 'Failed to load program timeline');
       }
     } else {
       // Clear tracker when error is resolved
@@ -214,7 +211,7 @@ export default function OperationalVisibilityPage() {
                 const actorProfile = event.actorPrincipal 
                   ? userProfiles?.get(event.actorPrincipal.toString())
                   : undefined;
-                const actorLabel = getActorDisplayName(event.actorPrincipal, actorProfile);
+                const humanizedMessage = humanizeTimelineEvent(event, actorProfile);
 
                 return (
                   <div
@@ -228,23 +225,13 @@ export default function OperationalVisibilityPage() {
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1">
                           <p className="text-sm font-medium text-foreground">
-                            {event.eventType.replace(/([A-Z])/g, ' $1').trim()}
+                            {humanizedMessage}
                           </p>
-                          {event.details && (
-                            <p className="text-sm text-muted-foreground mt-0.5">{event.details}</p>
+                          {event.relatedId && (
+                            <p className="text-xs text-muted-foreground/70 mt-1">
+                              ID: {event.relatedId}
+                            </p>
                           )}
-                          <div className="flex flex-wrap items-center gap-3 mt-1.5">
-                            {event.actorPrincipal && (
-                              <p className="text-xs text-muted-foreground/80">
-                                By: <span className="font-medium">{actorLabel}</span>
-                              </p>
-                            )}
-                            {event.relatedId && (
-                              <p className="text-xs text-muted-foreground/70">
-                                ID: {event.relatedId}
-                              </p>
-                            )}
-                          </div>
                         </div>
                         <span className="text-xs text-muted-foreground whitespace-nowrap">
                           {formatDate(BigInt(event.timestamp))}

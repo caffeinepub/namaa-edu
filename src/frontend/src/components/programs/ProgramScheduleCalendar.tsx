@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from 'lucide-react';
 import { useGetScheduleEventsByProgram, useArchiveScheduleEvent } from '../../hooks/data/useScheduleEvents';
 import { ScheduleEvent } from '../../backend';
-import { toast } from 'sonner';
+import { showSuccessToast, showErrorToast, SUCCESS_MESSAGES } from '../../utils/mutationFeedback';
 import ScheduleEventDialog from './ScheduleEventDialog';
 
 interface ProgramScheduleCalendarProps {
@@ -67,20 +67,18 @@ export default function ProgramScheduleCalendar({
   };
 
   const handleArchiveEvent = async (event: ScheduleEvent) => {
+    // Guard against rapid repeat clicks
+    if (archiveEvent.isPending) return;
+
     try {
       await archiveEvent.mutateAsync({ 
         eventId: event.id, 
         programId,
         event,
       });
-      toast.success('Event removed successfully');
-    } catch (error: any) {
-      const errorMessage = error?.message || 'Failed to remove event';
-      if (errorMessage.includes('Unauthorized')) {
-        toast.error('Only administrators can remove events');
-      } else {
-        toast.error(errorMessage);
-      }
+      showSuccessToast(SUCCESS_MESSAGES.eventArchived);
+    } catch (error: unknown) {
+      showErrorToast(error, 'Failed to remove event');
     }
   };
 
@@ -127,7 +125,8 @@ export default function ProgramScheduleCalendar({
                       e.stopPropagation();
                       handleArchiveEvent(event);
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={archiveEvent.isPending}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
                   >
                     <Trash2 className="h-3 w-3 text-destructive" />
                   </button>
